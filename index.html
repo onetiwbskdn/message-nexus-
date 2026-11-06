@@ -1,0 +1,1960 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Nexus Messenger Ultimate</title>
+<style>
+:root {
+  --bg: #0b1118; --panel: #151f2b; --line: #243447; --text: #ffffff; --muted: #8b9eb0;
+  --accent: #2d7aff; --danger: #ff4757; --success: #2ed573; --gold: #ffa502;
+  --own: #2d7aff; --other: #1e2c3a;
+  --grad-blue: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  --grad-premium: linear-gradient(135deg, #FFD700, #FFA500, #FF8C00);
+}
+:root[data-theme=light] {
+  --bg: #f0f2f5; --panel: #ffffff; --line: #e4e6eb; --text: #050505; --muted: #65676b;
+  --accent: #1877f2; --own: #1877f2; --other: #e4e6eb;
+}
+* { box-sizing: border-box; margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+body { background: #000; height: 100vh; display: flex; justify-content: center; overflow: hidden; }
+
+/* АДАПТИВНОСТЬ */
+@media (min-width: 768px) {
+    #app { max-width: 100%; width: 100%; max-height: 100vh; border-radius: 0; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important; }
+    main { padding: 20px 40px; }
+    .composer { max-width: 800px; margin: 0 auto; width: 100%; border-radius: 20px 20px 0 0; }
+    .modal-content { max-width: 500px !important; }
+}
+@media (max-width: 767px) {
+    #app { width: 100%; max-width: 450px; height: 100vh; max-height: 900px; }
+}
+
+#app { background: var(--bg); color: var(--text); position: relative; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+.view { display: none; flex: 1; flex-direction: column; min-height: 0; animation: fadeIn 0.2s ease; }
+.view.active { display: flex; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+header { display: flex; align-items: center; gap: 10px; padding: 15px; background: var(--panel); border-bottom: 1px solid var(--line); z-index: 10; }
+header h2 { font-size: 18px; flex: 1; font-weight: 700; cursor: pointer; }
+.ghost { background: none; border: none; color: var(--muted); font-size: 24px; cursor: pointer; padding: 5px; transition: 0.2s; }
+.ghost:active { transform: scale(0.9); }
+main { flex: 1; overflow-y: auto; padding: 15px; min-height: 0; }
+
+input, textarea, select { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font-size: 15px; margin-bottom: 12px; outline: none; transition: 0.2s; }
+input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45, 122, 255, 0.2); }
+.btn { width: 100%; padding: 15px; border: none; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 700; font-size: 16px; cursor: pointer; margin-bottom: 10px; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+.btn:active { transform: scale(0.97); opacity: 0.9; }
+.btn.alt { background: var(--line); color: var(--text); }
+.btn.danger { background: var(--danger); }
+.btn.premium { background: var(--grad-premium); color: #000; font-weight: 800; box-shadow: 0 4px 15px rgba(255, 165, 0, 0.4); }
+
+.row { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 16px; background: var(--panel); margin-bottom: 10px; cursor: pointer; transition: 0.2s; border: 1px solid transparent; }
+.row:active { background: var(--line); transform: scale(0.98); }
+.av { width: 50px; height: 50px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-size: 20px; position: relative; overflow: hidden; }
+.av img { width: 100%; height: 100%; object-fit: cover; }
+.av.premium { border: 3px solid #FFD700; box-shadow: 0 0 10px rgba(255,215,0,0.5); }
+.av.premium::after { content: '👑'; position: absolute; top: -5px; font-size: 16px; right: -2px; transform: rotate(15deg); text-shadow: 0 0 5px #000;}
+.grow { flex: 1; min-width: 0; }
+.sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ЧАТ */
+.msgs { display: flex; flex-direction: column; gap: 8px; padding: 15px; min-height: 100%; max-width: 800px; margin: 0 auto; width: 100%; }
+.msg { max-width: 80%; background: var(--other); padding: 10px 14px; border-radius: 16px 16px 16px 4px; align-self: flex-start; word-break: break-word; font-size: 15px; line-height: 1.4; box-shadow: 0 2px 5px rgba(0,0,0,0.1); animation: popIn 0.2s ease; position: relative; cursor: pointer; }
+.msg.out { background: var(--own); align-self: flex-end; border-radius: 16px 16px 4px 16px; color: #fff; }
+@keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.msg .meta { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 4px; text-align: right; }
+.msg .stick { font-size: 50px; line-height: 1; }
+.msg img { max-width: 100%; border-radius: 10px; margin-bottom: 5px; }
+.msg.giftmsg { background: transparent !important; box-shadow: none !important; padding: 0 !important; }
+.msg.giftmsg .meta { color: var(--muted); }
+
+/* PREMIUM ПУЗЫРИ */
+.bub-default { border-radius: 16px 16px 16px 4px; }
+.bub-round { border-radius: 30px; }
+.bub-square { border-radius: 4px; }
+.bub-glass { background: rgba(255,255,255,0.1) !important; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+.bub-neon { box-shadow: 0 0 15px var(--accent), inset 0 0 10px rgba(255,255,255,0.5); border: 1px solid var(--accent); }
+.bub-gradient { background: linear-gradient(45deg, #ff6b6b, #feca57) !important; color: #000 !important; font-weight: bold; }
+
+.composer { display: flex; gap: 8px; padding: 10px 15px; background: var(--panel); border-top: 1px solid var(--line); align-items: center; z-index: 10;}
+.composer input { margin: 0; border-radius: 24px; background: var(--bg); }
+.composer button { border: none; border-radius: 50%; background: var(--accent); color: #fff; width: 44px; height: 44px; cursor: pointer; font-size: 18px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; transition: 0.2s; }
+.composer button:active { transform: scale(0.9); }
+.composer .icon-btn { background: none; color: var(--muted); font-size: 26px; width: 36px; }
+
+nav { display: flex; background: var(--panel); border-top: 1px solid var(--line); padding: 5px 0; justify-content: center; z-index: 10;}
+nav button { flex: 1; max-width: 150px; padding: 10px 0; background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.2s; }
+nav button .ic { font-size: 22px; }
+nav button.on { color: var(--accent); font-weight: bold; }
+
+.card { background: var(--panel); border-radius: 16px; padding: 16px; margin-bottom: 15px; border: 1px solid var(--line); box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.item { background: var(--panel); border-radius: 16px; padding: 15px 5px; text-align: center; border: 1px solid var(--line); font-size: 13px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;}
+.item:active { transform: scale(0.95); background: var(--line); }
+.item .ic { font-size: 36px; margin-bottom: 5px; }
+.price { color: var(--gold); font-weight: bold; margin-top: 5px; font-size: 12px; background: rgba(255, 165, 2, 0.1); display: inline-block; padding: 2px 8px; border-radius: 10px; }
+
+/* ===== ВИЗУАЛ ПОДАРКОВ И NFT ===== */
+.art { width: 72px; height: 72px; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.art svg { width: 100%; height: 100%; display: block; }
+.giftbig { width: 120px; height: 120px; margin: 0 auto; display: flex; align-items: center; justify-content: center; }
+.giftbig svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.35)); }
+.emojiArt { display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 38px; box-shadow: inset 0 -6px 12px rgba(0,0,0,.25), 0 4px 12px rgba(0,0,0,.3); border: 2px solid rgba(255,255,255,.25); }
+.giftbig.emojiArt { font-size: 72px; }
+
+.nftcard { border-radius: 16px; overflow: hidden; position: relative; border: 1px solid rgba(255,255,255,0.08); }
+.nftcard svg { width: 84%; height: 84%; display: block; }
+.rar { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; font-size: 11px; font-weight: 800; text-shadow: 0 1px 3px #000; letter-spacing: .3px; }
+
+.tabs { display: flex; gap: 8px; margin-bottom: 15px; background: var(--panel); padding: 5px; border-radius: 12px; overflow-x: auto;}
+.tabs button { flex: 1; padding: 10px; border-radius: 8px; border: none; background: none; color: var(--muted); cursor: pointer; font-weight: bold; transition: 0.2s; white-space: nowrap;}
+.tabs button.on { background: var(--accent); color: #fff; box-shadow: 0 2px 10px rgba(45,122,255,0.3); }
+
+/* ИВЕНТЫ */
+.evBanner { margin: 0 0 12px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(135deg, #ff9a3c, #ff5e62); color: #fff; font-weight: 800; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.25); }
+.evPickBtn { padding: 12px; border-radius: 12px; border: 2px solid var(--line); background: var(--bg); color: var(--text); font-weight: 700; cursor: pointer; font-size: 14px; }
+.evPickBtn.on { border-color: var(--gold); background: rgba(255,165,2,.15); }
+.evGiftTag { font-size: 10px; color: #ff9a3c; font-weight: 800; margin-top: 4px; text-transform: uppercase; }
+.stockTag { font-size: 10px; color: var(--muted); margin-top: 4px; font-weight: 700; }
+#fxLayer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5000; }
+.fxp { position: absolute; top: -40px; animation-name: fxfall; animation-timing-function: linear; animation-iteration-count: infinite; user-select: none; }
+@keyframes fxfall {
+  0% { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(110vh) rotate(360deg); }
+}
+
+/* ПРОФИЛЬ */
+.profBg { height: 160px; border-radius: 20px 20px 0 0; margin-bottom: -45px; transition: 0.3s; position: relative; background-size: cover; background-position: center; overflow: hidden;}
+.bg-blue { background: var(--grad-blue); }
+.bg-red { background: linear-gradient(135deg, #4a1a1a, #e53e3e); }
+.bg-green { background: linear-gradient(135deg, #1b4a1b, #38a169); }
+.bg-purple { background: linear-gradient(135deg, #2d1b4e, #8E2DE2); }
+.bg-orange { background: linear-gradient(135deg, #F7971E, #FFD200); }
+.bg-neon { background: linear-gradient(135deg, #00ff87, #60efff); }
+.bg-cyberpunk { background: linear-gradient(135deg, #fc00ff, #00dbde); }
+.bg-sunset { background: linear-gradient(135deg, #ff512f, #dd2476); }
+.bg-ocean { background: linear-gradient(135deg, #2193b0, #6dd5ed); }
+.bg-fire { background: linear-gradient(135deg, #cb2d3e, #ef473a); }
+.bg-forest { background: linear-gradient(135deg, #11998e, #38ef7d); }
+.bg-lava { background: linear-gradient(135deg, #ff7e5f, #feb47b); }
+.bg-ice { background: linear-gradient(135deg, #83a4d4, #b6fbff); }
+.bg-royal { background: linear-gradient(135deg, #141E30, #243B55); }
+.bg-candy { background: linear-gradient(135deg, #ff9a9e, #fecfef); }
+.bg-matrix { background: linear-gradient(135deg, #000000, #0f9b0f); }
+.bg-gold { background: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728); }
+.bg-dark { background: linear-gradient(135deg, #232526, #414345); }
+
+.profAv { width: 90px; height: 90px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 36px; font-weight: bold; display: flex; align-items: center; justify-content: center; margin: 0 auto; border: 5px solid var(--bg); position: relative; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 2; overflow: hidden; }
+.profAv img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.profAv.premium { border-color: #FFD700; box-shadow: 0 0 20px rgba(255,215,0,0.4); }
+.profAv.premium::after { content: '👑'; position: absolute; top: 0px; font-size: 24px; transform: rotate(15deg); text-shadow: 0 0 5px #000; z-index: 3;}
+
+.center { text-align: center; }
+.stats { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
+.stat { background: var(--panel); border-radius: 12px; padding: 10px 15px; font-size: 12px; color: var(--muted); border: 1px solid var(--line); flex: 1; text-align: center; }
+.stat b { display: block; color: var(--accent); font-size: 20px; margin-top: 5px; }
+
+/* МОДАЛКИ */
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; }
+.modal.active { display: flex; }
+.modal-content { background: var(--panel); border-radius: 20px; padding: 25px 20px; width: 100%; max-width: 380px; position: relative; text-align: center; border: 1px solid var(--line); max-height: 85vh; overflow-y: auto; z-index: 2001; }
+.modal-close-btn { position: absolute; top: 12px; right: 12px; background: var(--line); border: none; color: var(--text); width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; z-index: 2002; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+.modal-close-btn:hover { background: var(--danger); color: #fff; }
+
+/* NFT ВИД (ПРОСМОТР) */
+.nft-view-box { width: 200px; height: 200px; margin: 0 auto 15px; border-radius: 22px; display: flex; align-items: center; justify-content: center; transition: 0.3s; border: 2px solid var(--line); overflow: hidden; position: relative; }
+.nft-view-box svg { width: 84%; height: 84%; display: block; }
+
+/* ФОНЫ NFT */
+.nft-bg-gray { background: #333; }
+.nft-bg-black { background: #000; }
+.nft-bg-pink { background: #ff69b4; }
+.nft-bg-rainbow { background: linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet); }
+.nft-bg-transparent { background: transparent; }
+.nft-bg-aurora { background: linear-gradient(120deg, #0f2027, #2c5364, #00c9a7, #7b2ff7, #0f2027); background-size: 300% 300%; animation: aurora 6s ease infinite; }
+.nft-bg-space { background: radial-gradient(circle at 30% 30%, #4b2a8a 0%, transparent 55%), radial-gradient(circle at 75% 75%, #0b4d8a 0%, transparent 60%), #05060f; }
+.nft-bg-gold-foil { background: linear-gradient(135deg, #7a5b12, #FFD700, #fff3b0, #b8860b); }
+@keyframes aurora { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+/* ЭФФЕКТЫ NFT */
+.nft-style-simple { filter: none; }
+.nft-style-gold { filter: drop-shadow(0 0 12px gold) saturate(1.6); }
+.nft-style-white { filter: grayscale(1) brightness(1.6) contrast(1.1); }
+.nft-style-rainbow { filter: drop-shadow(2px 2px 0 #ff3b3b) drop-shadow(-2px -2px 0 #3bf0ff); }
+.nft-fx-neon { animation: neonPulse 2s ease-in-out infinite; }
+@keyframes neonPulse {
+  0%, 100% { filter: drop-shadow(0 0 3px #00f0ff) drop-shadow(0 0 8px #7b2ff7); }
+  50% { filter: drop-shadow(0 0 10px #00f0ff) drop-shadow(0 0 22px #7b2ff7); }
+}
+.nft-fx-holo { animation: holo 4s linear infinite; }
+@keyframes holo {
+  from { filter: hue-rotate(0deg) saturate(1.4) drop-shadow(0 0 8px gold); }
+  to { filter: hue-rotate(360deg) saturate(1.4) drop-shadow(0 0 8px gold); }
+}
+
+/* АНИМАЦИЯ НАКОВАЛЬНИ */
+@keyframes hammerStrike {
+  0% { transform: rotate(-45deg) translateY(-20px); }
+  20% { transform: rotate(20deg) translateY(10px); }
+  40% { transform: rotate(-45deg) translateY(-20px); }
+  60% { transform: rotate(20deg) translateY(10px); }
+  80% { transform: rotate(-45deg) translateY(-20px); }
+  100% { transform: rotate(20deg) translateY(10px); }
+}
+.anvil-box { font-size: 80px; position: relative; margin: 20px 0; height: 100px; display: flex; justify-content: center; align-items: flex-end; }
+.hammer { position: absolute; font-size: 60px; top: 0; left: 20%; animation: hammerStrike 0.5s 3; transform-origin: bottom right; }
+.anvil { font-size: 80px; z-index: 2; }
+
+.toast { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 14px; font-weight: bold; opacity: 0; transition: .3s; pointer-events: none; z-index: 9999; max-width: 90%; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+.toast.show { opacity: 1; top: 30px; }
+.toast.ok { background: var(--success); }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+<div class="toast" id="toast"></div>
+<div id="fxLayer"></div>
+
+<!-- ЭКРАН ОНБОРДИНГА -->
+<div class="view active" id="vOnboarding" style="background:#000;color:#fff;justify-content:center;align-items:center;text-align:center;padding:30px;">
+  <div id="onboardContent" style="max-width:400px;transition:0.3s;">
+    <div style="font-size:80px;margin-bottom:20px;">🔐</div>
+    <h2 style="font-size:24px;margin-bottom:15px;font-weight:bold;">Полное шифрование</h2>
+    <p style="color:#888;font-size:15px;line-height:1.4;">Сквозное шифрование для всех сообщений и звонков. Никто не может прочитать ваши разговоры — даже мы.</p>
+  </div>
+  <button class="btn" style="margin-top:40px;width:100%;max-width:300px;" onclick="nextOnboard()">Далее</button>
+  <button class="btn alt" style="background:none;border:none;color:#888;margin-top:10px;" onclick="skipOnboard()">Пропустить</button>
+</div>
+
+<!-- АВТОРИЗАЦИЯ -->
+<div class="view" id="vAuth">
+  <main style="display:flex;flex-direction:column;justify-content:center;padding:30px">
+    <div class="center" style="font-size:70px;margin-bottom:10px">🛡️</div>
+    <h1 class="center" style="font-size:28px;margin-bottom:30px;font-weight:800;background:var(--grad-blue);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Nexus</h1>
+
+    <input id="authNick" placeholder="Ваш ник (3-20 символов)" autocomplete="username">
+    <input id="authPass" type="password" placeholder="Пароль (минимум 6)" autocomplete="current-password">
+
+    <div id="adminSecretBox" class="hidden" style="background:var(--danger);padding:15px;border-radius:12px;margin-bottom:15px">
+      <div style="font-size:13px;color:#fff;margin-bottom:8px;font-weight:bold">🔐 Секретная фраза Админа</div>
+      <input id="secretPhrase" placeholder="10 слов..." style="margin:0;background:rgba(0,0,0,0.3);border:none;color:#fff">
+    </div>
+
+    <div id="authError" style="color:var(--danger);font-size:14px;text-align:center;margin-bottom:15px;font-weight:bold;display:none"></div>
+
+    <button class="btn" id="btnLogin">Войти в аккаунт</button>
+    <button class="btn alt" id="btnRegister">Создать аккаунт</button>
+  </main>
+</div>
+
+<!-- СПИСОК ЧАТОВ -->
+<div class="view" id="vChats">
+  <header><h2>Чаты</h2><button class="ghost" id="btnNewGroup">➕</button></header>
+  <main>
+    <div style="max-width:800px;margin:0 auto;width:100%">
+        <div id="evBanner" class="evBanner hidden"></div>
+        <input id="searchInput" placeholder="Поиск по нику... 🔍">
+        <div id="chatList"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ЧАТ -->
+<div class="view" id="vChat">
+  <header>
+    <button class="ghost" id="chatBack">←</button>
+    <div class="av" id="chatAvatar" style="width:40px;height:40px;font-size:16px; cursor:pointer;" onclick="openFriendProfile()"></div>
+    <h2 id="chatTitle" style="cursor:pointer" onclick="openFriendProfile()"></h2>
+    <button class="ghost" id="btnSendGift" style="font-size:20px;">🎁</button>
+  </header>
+  <main id="msgsWrap" style="padding:0; position:relative;">
+    <div id="chatWallpaper" style="position:absolute;top:0;left:0;right:0;bottom:0;background-size:cover;background-position:center;opacity:0.3;z-index:0;pointer-events:none;"></div>
+    <div class="msgs" id="msgs" style="position:relative;z-index:1;"></div>
+  </main>
+  <div class="composer">
+    <button class="icon-btn" id="btnAttach" style="font-size:22px;">🖇️</button>
+    <button class="icon-btn" id="btnSticker">😀</button>
+    <input id="msgInput" placeholder="Сообщение...">
+    <button id="sendBtn">➤</button>
+  </div>
+</div>
+
+<!-- МАГАЗИН -->
+<div class="view" id="vShop">
+  <header><h2>Магазин</h2></header>
+  <main>
+    <div style="max-width:800px;margin:0 auto;width:100%">
+        <div class="card center" style="background:var(--grad-blue);color:#fff;border:none">
+          <div style="font-size:14px;opacity:0.9">NEXUS Crypto Wallet</div>
+          <div class="nexTxt" style="font-size:36px;font-weight:900;margin:10px 0">0 NEX</div>
+          <div style="font-size:14px;opacity:0.9;margin-top:10px">Баланс Coin</div>
+          <div class="balanceTxt" style="font-size:24px;font-weight:bold;color:#FFD700">0 🪙</div>
+        </div>
+        <div class="tabs">
+          <button id="catGift" class="on">🎁 Подарки</button>
+          <button id="catNft">🖼️ NFT</button>
+        </div>
+        <div class="grid" id="shopGrid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- ПРОФИЛЬ -->
+<div class="view" id="vProfile">
+  <header>
+    <button class="ghost" id="profBack">←</button>
+    <h2 id="profHeader">Мой профиль</h2>
+  </header>
+  <main style="padding-top:0">
+    <div style="max-width:800px;margin:0 auto;width:100%">
+        <div class="profBg bg-blue" id="profBg"></div>
+        <div class="profAv" id="profAv"></div>
+        <div class="center" style="margin-top:10px">
+          <div style="font-size:22px;font-weight:800;display:flex;justify-content:center;align-items:center;gap:5px" id="profNick"></div>
+          <div class="sub" id="profClan" style="color:var(--gold);font-weight:bold;margin-bottom:5px"></div>
+          <div class="sub" id="profBio"></div>
+        </div>
+
+        <div class="stats">
+          <div class="stat">Coin<b id="profBalance">0</b></div>
+          <div class="stat">NEX<b id="profNex">0</b></div>
+        </div>
+
+        <div id="profOwn">
+          <div class="card" style="border-color:var(--gold)" id="premCard">
+            <div style="font-weight:bold;margin-bottom:10px;color:var(--gold)">👑 Premium Подписка</div>
+            <button class="btn premium" id="buyPremiumBtn" onclick="buyPremium()">Купить Premium (5000 NEX)</button>
+            <button class="btn alt" onclick="openSettings()">⚙️ Настройки профиля</button>
+          </div>
+
+          <div class="card">
+            <button class="btn alt" id="themeBtn">🌓 Сменить тему</button>
+            <button class="btn danger" id="logoutBtn">Выйти из аккаунта</button>
+          </div>
+        </div>
+
+        <div class="tabs" id="profTabs">
+          <button id="tabGifts" class="on">🎁 Подарки</button>
+          <button id="tabNft">🖼️ NFT Коллекция</button>
+        </div>
+        <div class="grid" id="invGrid"></div>
+    </div>
+  </main>
+</div>
+
+<!-- НАСТРОЙКИ ПРОФИЛЯ -->
+<div class="view" id="vSettings">
+  <header><button class="ghost" onclick="show('vProfile')">←</button><h2>Настройки</h2></header>
+  <main>
+    <div style="max-width:800px;margin:0 auto;width:100%">
+        <div class="card">
+          <h3 style="margin-bottom:10px">Профиль</h3>
+          <textarea id="setBio" placeholder="О себе..." rows="2"></textarea>
+          <div style="display:flex; gap:10px;">
+             <button class="btn alt" onclick="uploadPhoto('avatar')">📸 Аватарка</button>
+             <button class="btn alt" onclick="uploadPhoto('banner')">🖼️ Баннер</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:10px">🎨 Фон профиля</h3>
+          <select id="setBg">
+            <option value="bg-blue">Синий</option><option value="bg-red">Красный</option>
+            <option value="bg-green">Зелёный</option><option value="bg-purple">Фиолетовый</option>
+            <option value="bg-orange">Оранжевый</option><option value="bg-neon">Неон</option>
+            <option value="bg-cyberpunk">Киберпанк</option><option value="bg-sunset">Закат</option>
+            <option value="bg-ocean">Океан</option><option value="bg-fire">Огонь</option>
+            <option value="bg-forest">Лес</option><option value="bg-lava">Лава</option>
+            <option value="bg-ice">Лед</option><option value="bg-royal">Королевский</option>
+            <option value="bg-candy">Конфета</option><option value="bg-matrix">Матрица</option>
+            <option value="bg-gold">Золото</option><option value="bg-dark">Темный</option>
+          </select>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:10px">🛡️ Клан (500 NEX)</h3>
+          <div id="clanStatus" style="margin-bottom:10px;font-weight:bold"></div>
+          <input id="setClan" placeholder="Название клана">
+          <button class="btn" onclick="createClan()">Создать клан</button>
+        </div>
+
+        <div class="card" id="premSettings" style="border-color:var(--gold)">
+          <h3 style="margin-bottom:10px;color:var(--gold)">👑 Premium Настройки</h3>
+
+          <label class="sub" style="display:block;margin-bottom:5px">Стиль пузырей:</label>
+          <select id="setBubbleStyle">
+            <option value="bub-default">Классический</option>
+            <option value="bub-round">Круглый</option>
+            <option value="bub-square">Квадратный</option>
+            <option value="bub-glass">Стекло</option>
+            <option value="bub-neon">Неон</option>
+            <option value="bub-gradient">Градиент</option>
+          </select>
+
+          <label class="sub" style="display:block;margin-bottom:5px">Обои для чата:</label>
+          <button class="btn alt" onclick="uploadPhoto('wallpaper')" style="margin-bottom:10px;">🖼️ Загрузить обои</button>
+
+          <label class="sub" style="display:block;margin-bottom:5px">Цвет своих сообщений:</label>
+          <input type="color" id="setMsgColor" value="#2d7aff" style="padding:0;height:40px;">
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:10px">📱 Мои устройства</h3>
+          <div id="deviceList" class="sub" style="margin-bottom:10px;">Загрузка...</div>
+          <button class="btn danger" onclick="logoutAllDevices()">Выйти на всех устройствах</button>
+        </div>
+
+        <!-- СМЕНА ПАРОЛЯ -->
+        <div class="card" style="border-color:var(--danger)">
+          <h3 style="margin-bottom:10px;color:var(--danger)">🔐 Безопасность</h3>
+          <div id="passChangeLock" class="sub" style="margin-bottom:10px;color:var(--gold)"></div>
+          <input id="newPassInput" type="password" placeholder="Новый пароль (мин. 5 символов)">
+          <button class="btn danger" id="btnChangePass" onclick="changePassword()">Сменить пароль</button>
+        </div>
+
+        <button class="btn" onclick="saveSettings()" style="margin-top:20px;padding:20px">СОХРАНИТЬ ВСЁ</button>
+    </div>
+  </main>
+</div>
+
+<!-- АДМИНКА -->
+<div class="view" id="vAdmin">
+  <header><h2>Админ-панель</h2></header>
+  <main>
+    <div style="max-width:800px;margin:0 auto;width:100%">
+        <div class="card">
+          <h3 style="margin-bottom:10px">🎉 Ивенты</h3>
+          <div id="evPick" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"></div>
+          <div id="evStatus" class="sub" style="margin-bottom:10px;white-space:normal"></div>
+          <button class="btn" style="background:var(--success);margin-bottom:8px" onclick="startEvent()">▶ Начать ивент</button>
+          <button class="btn danger" onclick="endEvent()">■ Закончить ивент</button>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:10px">💰 Валюты</h3>
+          <input id="adminUser1" placeholder="Ник">
+          <input id="adminAmount1" type="number" placeholder="Сумма">
+          <div style="display:flex;gap:8px;">
+            <button class="btn" style="background:var(--success);margin:0" onclick="adminAction('balance')">Coin</button>
+            <button class="btn" style="background:var(--accent);margin:0" onclick="adminAction('nex')">NEX</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:10px">🎖️ Статусы & Права</h3>
+          <input id="adminUser2" placeholder="Ник">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn" style="background:var(--accent);margin:0" onclick="adminAction('verify')">Дать ✔</button>
+            <button class="btn" style="background:#555;margin:0" onclick="adminAction('unverify')">Снять ✔</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn" style="background:var(--gold);margin:0" onclick="adminAction('premium')">Дать 👑</button>
+            <button class="btn" style="background:#555;margin:0" onclick="adminAction('unpremium')">Снять 👑</button>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn" style="background:#8e44ad;margin:0" onclick="adminAction('makeadmin')">Выдать Админку</button>
+            <button class="btn" style="background:#555;margin:0" onclick="adminAction('removeadmin')">Снять Админку</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-bottom:10px">🚫 Модерация & Сброс</h3>
+          <input id="adminUser3" placeholder="Ник">
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn danger" style="margin:0" onclick="adminAction('ban')">Бан</button>
+            <button class="btn" style="background:var(--success);margin:0" onclick="adminAction('unban')">Разбан</button>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <button class="btn" style="background:#e67e22;margin:0" onclick="adminAction('freeze')">Заморозить</button>
+            <button class="btn" style="background:var(--success);margin:0" onclick="adminAction('unfreeze')">Разморозить</button>
+          </div>
+          <button class="btn alt" onclick="adminAction('clearClan')">Удалить клан у юзера</button>
+          <button class="btn alt" style="color:var(--danger)" onclick="adminAction('clearNft')">Удалить все NFT у юзера</button>
+        </div>
+    </div>
+  </main>
+</div>
+
+<!-- МОДАЛКА: КАТАЛОГ ПОДАРКОВ В ЧАТЕ -->
+<div class="modal" id="mChatGifts">
+  <div class="modal-content">
+    <button class="modal-close-btn" onclick="closeModal('mChatGifts')">✖</button>
+    <h3 style="margin-bottom:15px">Отправить подарок</h3>
+    <div class="grid" id="chatGiftsGrid" style="grid-template-columns: repeat(2, 1fr);"></div>
+  </div>
+</div>
+
+<!-- МОДАЛКА: СКРЕПКА (ВЛОЖЕНИЯ) -->
+<div class="modal" id="mAttach">
+  <div class="modal-content" style="padding:15px;">
+    <button class="modal-close-btn" onclick="closeModal('mAttach')">✖</button>
+    <h3 style="margin-bottom:15px">Вложения</h3>
+    <button class="btn alt" onclick="sendSecretPhoto()" style="justify-content:flex-start; padding:15px;">📷 Фото (Сгорит после просмотра)</button>
+    <button class="btn alt" onclick="sendSecretText()" style="justify-content:flex-start; padding:15px;">🔥 Секретный текст (Сгорит после прочтения)</button>
+    <input type="file" id="secretPhotoInput" accept="image/*" style="display:none;" onchange="handleSecretPhoto(event)">
+  </div>
+</div>
+
+<!-- МОДАЛКА: СТИКЕРЫ -->
+<div class="modal" id="mStickers">
+  <div class="modal-content">
+    <button class="modal-close-btn" onclick="closeModal('mStickers')">✖</button>
+    <h3 style="margin-bottom:15px">Стикеры (Premium)</h3>
+    <div class="grid" style="font-size:40px;cursor:pointer">
+      <div onclick="sendSticker('🐶')">🐶</div><div onclick="sendSticker('🐱')">🐱</div><div onclick="sendSticker('🦊')">🦊</div>
+      <div onclick="sendSticker('😻')">😻</div><div onclick="sendSticker('🔥')">🔥</div><div onclick="sendSticker('💩')">💩</div>
+      <div onclick="sendSticker('🎉')">🎉</div><div onclick="sendSticker('👻')">👻</div><div onclick="sendSticker('🤖')">🤖</div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА: NFT ПРОСМОТР -->
+<div class="modal" id="mNftView">
+  <div class="modal-content">
+    <button class="modal-close-btn" onclick="closeModal('mNftView')">✖</button>
+    <div class="nft-view-box nft-bg-gray" id="nftViewBox"></div>
+    <h3 id="nftViewName" style="margin-bottom:4px">NFT</h3>
+    <div id="nftRarity" style="font-size:14px;margin-bottom:12px"></div>
+    <div id="nftActions">
+      <button class="btn" id="nftUpgradeBtn" style="background:linear-gradient(135deg,#7b2ff7,#00c9a7);" onclick="upgradeNftBg()">🎨 Улучшить фон (150 🪙)</button>
+      <button class="btn" style="background:var(--gold);color:#000;" onclick="sellNft()">💰 Продать за 50% цены</button>
+      <button class="btn alt" onclick="giftNft()">🎁 Подарить другу (250 Coin)</button>
+      <div class="sub" style="white-space:normal;font-size:11px;margin-top:4px">Улучшение списывает Coin при каждой попытке. Шанс успеха зависит от текущей редкости.</div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛКА: АНИМАЦИЯ НАКОВАЛЬНИ -->
+<div class="modal" id="mAnvil">
+  <div class="modal-content">
+    <h3 style="margin-bottom:10px">Крафт NFT (Нужно 4 шт.)</h3>
+    <div class="anvil-box"><div class="anvil">🪨</div><div class="hammer">🔨</div></div>
+    <div id="anvilResult" style="font-size:20px;font-weight:bold;color:var(--gold);opacity:0;transition:1s">✨ УЛУЧШЕНО! ✨</div>
+  </div>
+</div>
+
+<!-- НИЖНЯЯ НАВИГАЦИЯ -->
+<nav id="bottomNav" class="hidden">
+  <button data-go="vChats" class="on"><span class="ic">💬</span>Чаты</button>
+  <button data-go="vShop"><span class="ic">🛍️</span>Магазин</button>
+  <button data-go="vProfile"><span class="ic">👤</span>Профиль</button>
+  <button data-go="vAdmin" id="navAdmin" class="hidden"><span class="ic">🛠️</span>Админ</button>
+</nav>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, push, set, get, update, onValue, onChildAdded, onChildRemoved, runTransaction, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+const firebaseConfig = { apiKey: "AIzaSyBkNR9ZrRFwB39CYlhk2CNz4jWD-WGWuD8", authDomain: "chat-d7385.firebaseapp.com", databaseURL: "https://chat-d7385-default-rtdb.europe-west1.firebasedatabase.app", projectId: "chat-d7385", storageBucket: "chat-d7385.firebasestorage.app", messagingSenderId: "421202112650", appId: "1:421202112650:web:7b53494f3d32fd02a87d73" };
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+signInAnonymously(auth).catch(console.error);
+
+const ADMIN_NICK = "evdo";
+const ADMIN_SECRET = "evdo evdo EVDONKO Misha hi fish popa pops vino Moldova";
+
+/* ==========================================================
+   ВИЗУАЛ: SVG. В шаблонах метка UID заменяется ОДНИМ id
+   на весь экземпляр (чтобы defs и url(#...) совпадали).
+   ========================================================== */
+let _uidCounter = 0;
+const inst = raw => {
+  const id = "u" + (++_uidCounter);
+  return raw.replace(/UID/g, id);
+};
+
+const SHADOW = `<ellipse cx="50" cy="93" rx="26" ry="4" fill="#000" opacity=".3"/>`;
+
+const GIFT_ART = {
+  heart: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="gHUID" cx="35%" cy="30%" r="75%">
+      <stop offset="0" stop-color="#ffc2d1"/><stop offset="0.45" stop-color="#ff3d6e"/><stop offset="1" stop-color="#8a0f35"/>
+    </radialGradient></defs>
+    ${SHADOW}
+    <path d="M50 84C18 62 6 46 6 30 6 16 17 6 31 6c8 0 15 4 19 11 4-7 11-11 19-11 14 0 25 10 25 24 0 16-12 32-44 54z" fill="url(#gHUID)" stroke="#8a0f35" stroke-width="1.2" stroke-opacity=".5"/>
+    <path d="M20 30c1-7 6-11 12-11" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" opacity=".75"/>
+    <ellipse cx="28" cy="24" rx="3" ry="2" fill="#fff" opacity=".9" transform="rotate(-30 28 24)"/>
+    <path d="M82 14l1.8 4.6L88.5 20l-4.7 1.4L82 26l-1.8-4.6L75.5 20l4.7-1.4z" fill="#fff" opacity=".9"/>
+  </svg>`,
+
+  teddy: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="gTUID" cx="40%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#e8b27a"/><stop offset="1" stop-color="#7a4a22"/>
+    </radialGradient></defs>
+    <ellipse cx="50" cy="95" rx="28" ry="3.5" fill="#000" opacity=".3"/>
+    <circle cx="23" cy="26" r="11" fill="url(#gTUID)"/>
+    <circle cx="77" cy="26" r="11" fill="url(#gTUID)"/>
+    <circle cx="23" cy="26" r="5.5" fill="#f2c9a0"/>
+    <circle cx="77" cy="26" r="5.5" fill="#f2c9a0"/>
+    <ellipse cx="50" cy="80" rx="21" ry="14" fill="url(#gTUID)"/>
+    <ellipse cx="50" cy="82" rx="11" ry="9" fill="#f2c9a0"/>
+    <ellipse cx="34" cy="90" rx="7" ry="4.5" fill="#6b3f1c"/>
+    <ellipse cx="66" cy="90" rx="7" ry="4.5" fill="#6b3f1c"/>
+    <circle cx="50" cy="44" r="27" fill="url(#gTUID)"/>
+    <ellipse cx="50" cy="56" rx="13" ry="10" fill="#f2c9a0"/>
+    <ellipse cx="50" cy="52" rx="5" ry="3.8" fill="#2b1608"/>
+    <path d="M50 56v3M45 61q5 4 10 0" stroke="#2b1608" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="40" cy="40" r="3.8" fill="#2b1608"/>
+    <circle cx="60" cy="40" r="3.8" fill="#2b1608"/>
+    <circle cx="41.3" cy="38.7" r="1.3" fill="#fff"/>
+    <circle cx="61.3" cy="38.7" r="1.3" fill="#fff"/>
+    <path d="M38 68 L50 74 L38 80Z M62 68 L50 74 L62 80Z" fill="#e53e3e"/>
+    <circle cx="50" cy="74" r="3.4" fill="#b91c1c"/>
+  </svg>`,
+
+  rose: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="gRUID" cx="50%" cy="40%" r="60%">
+        <stop offset="0" stop-color="#ff8aa3"/><stop offset="1" stop-color="#9b0a2a"/>
+      </radialGradient>
+      <linearGradient id="gLUID" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#48bb78"/><stop offset="1" stop-color="#276749"/>
+      </linearGradient>
+    </defs>
+    <ellipse cx="50" cy="94" rx="22" ry="3" fill="#000" opacity=".3"/>
+    <path d="M50 64 C48 76 51 86 50 93" stroke="url(#gLUID)" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M50 82 C36 76 30 68 32 58 C42 62 48 72 50 82Z" fill="url(#gLUID)"/>
+    <path d="M50 86 C62 80 68 73 68 64 C58 67 52 76 50 86Z" fill="url(#gLUID)"/>
+    <circle cx="50" cy="40" r="27" fill="url(#gRUID)"/>
+    <path d="M50 22 C64 22 68 34 62 40 C58 46 42 46 40 38 C38 30 42 22 50 22" stroke="#7a0a22" stroke-width="3" fill="none" opacity=".55"/>
+    <path d="M36 42 C36 30 50 26 58 34 C64 40 58 52 50 52 C42 52 36 48 36 42" stroke="#c81d4e" stroke-width="2.5" fill="none" opacity=".7"/>
+    <path d="M28 34 q6 -8 14 -6" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".5"/>
+  </svg>`,
+
+  diamond: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="gDUID" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e6fdff"/><stop offset="1" stop-color="#3ab0ff"/>
+    </linearGradient></defs>
+    <ellipse cx="50" cy="93" rx="26" ry="4" fill="#000" opacity=".3"/>
+    <polygon points="30,16 70,16 90,38 50,88 10,38" fill="url(#gDUID)"/>
+    <polygon points="30,16 70,16 50,38" fill="#c9f4ff"/>
+    <polygon points="10,38 30,16 50,38" fill="#7fd8ff"/>
+    <polygon points="90,38 70,16 50,38" fill="#3aa8f0"/>
+    <polygon points="10,38 50,38 50,88" fill="#2a8ee0"/>
+    <polygon points="90,38 50,38 50,88" fill="#1c6fc4"/>
+    <polygon points="30,16 38,16 22,34 10,38" fill="#fff" opacity=".35"/>
+    <path d="M70 26 l1.5 3.5 3.5 1.5 -3.5 1.5 -1.5 3.5 -1.5 -3.5 -3.5 -1.5 3.5 -1.5z" fill="#fff" opacity=".9"/>
+  </svg>`
+};
+
+/* ЛИМИТИРОВАННЫЕ ПОДАРКИ (как в Telegram: ограниченный тираж) */
+const LIM_ART = {
+  crown: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="cgUID" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fff3a0"/><stop offset="1" stop-color="#c58a00"/>
+    </linearGradient></defs>
+    <ellipse cx="50" cy="90" rx="30" ry="4" fill="#000" opacity=".3"/>
+    <path d="M14 70 L22 32 L38 52 L50 22 L62 52 L78 32 L86 70Z" fill="url(#cgUID)" stroke="#b07a00" stroke-width="1.5"/>
+    <rect x="14" y="70" width="72" height="12" rx="3" fill="#e0a400"/>
+    <circle cx="22" cy="32" r="4" fill="#ff4757"/>
+    <circle cx="50" cy="22" r="4" fill="#2d7aff"/>
+    <circle cx="78" cy="32" r="4" fill="#2ed573"/>
+    <circle cx="50" cy="76" r="3" fill="#ff4757"/>
+    <path d="M26 58 L30 50" stroke="#fff" stroke-width="2" opacity=".7" stroke-linecap="round"/>
+  </svg>`,
+
+  cup: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="cuUID" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff3a0"/><stop offset=".5" stop-color="#ffc83a"/><stop offset="1" stop-color="#b07a00"/>
+    </linearGradient></defs>
+    <ellipse cx="50" cy="91" rx="28" ry="4" fill="#000" opacity=".3"/>
+    <path d="M28 16 H72 V40 Q72 64 50 66 Q28 64 28 40Z" fill="url(#cuUID)" stroke="#b07a00" stroke-width="1.5"/>
+    <path d="M28 24 Q12 24 14 38 Q16 50 30 50" stroke="#e0a400" stroke-width="5" fill="none"/>
+    <path d="M72 24 Q88 24 86 38 Q84 50 70 50" stroke="#e0a400" stroke-width="5" fill="none"/>
+    <rect x="44" y="66" width="12" height="14" fill="#c58a00"/>
+    <rect x="32" y="80" width="36" height="8" rx="3" fill="#c58a00"/>
+    <polygon points="50,28 53,35 60,36 55,41 57,48 50,44 43,48 45,41 40,36 47,35" fill="#fff" opacity=".85"/>
+  </svg>`
+};
+
+/* ИВЕНТОВЫЕ ПОДАРКИ — еда, SVG */
+const EVENT_ART = {
+  pie: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="pUID" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ffd08a"/><stop offset="1" stop-color="#a0561a"/></radialGradient></defs>
+    ${SHADOW}
+    <rect x="14" y="52" width="72" height="30" rx="8" fill="url(#pUID)"/>
+    <ellipse cx="50" cy="52" rx="36" ry="10" fill="#ffb347"/>
+    <path d="M50 44 L50 62 M38 46 L44 62 M62 46 L56 62" stroke="#7a3b00" stroke-width="2"/>
+    <ellipse cx="50" cy="52" rx="30" ry="6" fill="#ffc977" opacity=".5"/>
+  </svg>`,
+
+  lollipop: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="lUID" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ffb0f0"/><stop offset="1" stop-color="#7a1a6a"/></radialGradient></defs>
+    <ellipse cx="50" cy="94" rx="18" ry="3" fill="#000" opacity=".3"/>
+    <rect x="47" y="55" width="6" height="38" rx="3" fill="#e8e8e8"/>
+    <circle cx="50" cy="40" r="28" fill="url(#lUID)"/>
+    <circle cx="40" cy="34" r="6" fill="#fff" opacity=".9"/>
+    <circle cx="60" cy="34" r="6" fill="#fff" opacity=".9"/>
+    <circle cx="40" cy="35" r="2.5" fill="#1a0a2a"/>
+    <circle cx="60" cy="35" r="2.5" fill="#1a0a2a"/>
+    <path d="M42 50 h16 v3 h-16z" fill="#fff"/>
+    <path d="M42 53 l3 4 3-4 3 4 3-4 3 4 3-4" stroke="#fff" stroke-width="1.5" fill="none"/>
+  </svg>`,
+
+  witchcake: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="wUID" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b58cff"/><stop offset="1" stop-color="#4a1a8a"/></linearGradient></defs>
+    <ellipse cx="50" cy="92" rx="34" ry="5" fill="#000" opacity=".3"/>
+    <rect x="18" y="58" width="64" height="30" rx="6" fill="#7a3b00"/>
+    <path d="M18 58 Q26 48 34 58 Q42 48 50 58 Q58 48 66 58 Q74 48 82 58 L82 66 L18 66Z" fill="url(#wUID)"/>
+    <path d="M50 14 L36 46 L64 46Z" fill="#1a0a2a"/>
+    <ellipse cx="50" cy="46" rx="20" ry="4" fill="#1a0a2a"/>
+    <circle cx="42" cy="78" r="3" fill="#ff8a00"/>
+    <circle cx="58" cy="80" r="3" fill="#ff8a00"/>
+    <circle cx="50" cy="86" r="2" fill="#ffd34d"/>
+  </svg>`,
+
+  gingerbread: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="gbUID" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#e8a863"/><stop offset="1" stop-color="#7a3d10"/></radialGradient></defs>
+    <ellipse cx="50" cy="94" rx="26" ry="4" fill="#000" opacity=".3"/>
+    <circle cx="50" cy="24" r="13" fill="url(#gbUID)"/>
+    <rect x="34" y="36" width="32" height="34" rx="14" fill="url(#gbUID)"/>
+    <rect x="20" y="40" width="14" height="10" rx="5" fill="url(#gbUID)" transform="rotate(20 27 45)"/>
+    <rect x="66" y="40" width="14" height="10" rx="5" fill="url(#gbUID)" transform="rotate(-20 73 45)"/>
+    <rect x="36" y="66" width="10" height="20" rx="5" fill="url(#gbUID)"/>
+    <rect x="54" y="66" width="10" height="20" rx="5" fill="url(#gbUID)"/>
+    <circle cx="45" cy="20" r="2" fill="#fff"/>
+    <circle cx="55" cy="20" r="2" fill="#fff"/>
+    <path d="M44 28 Q50 33 56 28" stroke="#fff" stroke-width="2" fill="none"/>
+    <circle cx="50" cy="48" r="2" fill="#fff"/>
+    <circle cx="50" cy="58" r="2" fill="#fff"/>
+  </svg>`,
+
+  nycake: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="ncUID" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffd0dc"/><stop offset="1" stop-color="#e9708f"/></linearGradient></defs>
+    <ellipse cx="50" cy="92" rx="34" ry="5" fill="#000" opacity=".3"/>
+    <rect x="18" y="56" width="64" height="32" rx="4" fill="url(#ncUID)"/>
+    <path d="M18 56 Q26 44 34 56 Q42 44 50 56 Q58 44 66 56 Q74 44 82 56 L82 62 L18 62Z" fill="#fff"/>
+    <path d="M50 12 l4 9 9 1 -7 6 2 9 -8-5 -8 5 2-9 -7-6 9-1z" fill="#ffd700" stroke="#b08a00" stroke-width="1"/>
+    <rect x="46" y="30" width="8" height="12" rx="2" fill="#ff4757"/>
+  </svg>`,
+
+  champagne: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="chUID" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2e7d4f"/><stop offset=".5" stop-color="#58c48a"/><stop offset="1" stop-color="#1b5235"/>
+    </linearGradient></defs>
+    <ellipse cx="50" cy="93" rx="22" ry="3.5" fill="#000" opacity=".3"/>
+    <path d="M42 40 L42 22 L58 22 L58 40 Q76 52 74 74 Q72 90 50 90 Q28 90 26 74 Q24 52 42 40Z" fill="url(#chUID)"/>
+    <rect x="41" y="12" width="18" height="12" rx="2" fill="#ffd700"/>
+    <rect x="38" y="60" width="24" height="18" rx="2" fill="#f7f1d6"/>
+    <path d="M44 66 h12 M44 71 h12" stroke="#c9a500" stroke-width="1.5"/>
+  </svg>`,
+
+  donut: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="dnUID" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#f5c57a"/><stop offset="1" stop-color="#9a5a20"/></radialGradient></defs>
+    <ellipse cx="50" cy="92" rx="30" ry="4" fill="#000" opacity=".3"/>
+    <circle cx="50" cy="52" r="34" fill="url(#dnUID)"/>
+    <path d="M18 46 Q30 30 50 36 Q70 30 82 46 Q72 42 50 48 Q28 42 18 46Z" fill="#3ddc84"/>
+    <circle cx="50" cy="52" r="11" fill="#151f2b"/>
+    <rect x="28" y="60" width="6" height="3" rx="1.5" fill="#ff4757" transform="rotate(20 31 61)"/>
+    <rect x="66" y="42" width="6" height="3" rx="1.5" fill="#ffd700" transform="rotate(-20 69 43)"/>
+    <rect x="34" y="34" width="6" height="3" rx="1.5" fill="#ff4fd8" transform="rotate(30 37 35)"/>
+    <rect x="60" y="66" width="6" height="3" rx="1.5" fill="#7fe0ff" transform="rotate(-30 63 67)"/>
+  </svg>`,
+
+  egg: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="eUID" cx="40%" cy="30%" r="75%"><stop offset="0" stop-color="#fff0fa"/><stop offset="1" stop-color="#e070b8"/></radialGradient></defs>
+    <ellipse cx="50" cy="92" rx="22" ry="3.5" fill="#000" opacity=".3"/>
+    <path d="M50 8 C72 8 80 48 78 66 C76 84 64 92 50 92 C36 92 24 84 22 66 C20 48 28 8 50 8Z" fill="url(#eUID)"/>
+    <path d="M26 56 L34 46 L42 56 L50 46 L58 56 L66 46 L74 56" stroke="#8a2a78" stroke-width="3" fill="none"/>
+    <path d="M30 72 L38 64 L46 72 L54 64 L62 72 L70 64" stroke="#ffd700" stroke-width="2.5" fill="none"/>
+  </svg>`,
+
+  kulich: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="kUID" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffd27a"/><stop offset="1" stop-color="#a86a1a"/></linearGradient></defs>
+    <ellipse cx="50" cy="92" rx="26" ry="4" fill="#000" opacity=".3"/>
+    <path d="M30 34 L30 80 Q30 88 50 88 Q70 88 70 80 L70 34 Q70 22 50 22 Q30 22 30 34Z" fill="url(#kUID)"/>
+    <path d="M30 34 Q50 42 70 34 L70 46 Q50 54 30 46Z" fill="#fff"/>
+    <circle cx="40" cy="28" r="1.8" fill="#ff5a5a"/>
+    <circle cx="50" cy="26" r="1.8" fill="#5ac8ff"/>
+    <circle cx="60" cy="29" r="1.8" fill="#ff5a5a"/>
+  </svg>`,
+
+  paskha: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="psUID" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd6e6"/><stop offset="1" stop-color="#c25a88"/></linearGradient></defs>
+    <ellipse cx="50" cy="92" rx="30" ry="4" fill="#000" opacity=".3"/>
+    <path d="M22 84 L30 40 L70 40 L78 84Z" fill="url(#psUID)"/>
+    <path d="M30 40 L50 18 L70 40Z" fill="#ffe9f2"/>
+    <path d="M50 24 V34 M46 28 H54" stroke="#8a2a5a" stroke-width="2"/>
+    <path d="M34 58 h32 M30 70 h40" stroke="#8a2a5a" stroke-width="1.5" opacity=".4"/>
+  </svg>`,
+
+  blin: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="bUID" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff0c0"/><stop offset="1" stop-color="#c98a2a"/></radialGradient></defs>
+    <ellipse cx="50" cy="90" rx="36" ry="6" fill="#000" opacity=".3"/>
+    <ellipse cx="50" cy="70" rx="36" ry="12" fill="url(#bUID)"/>
+    <ellipse cx="50" cy="56" rx="36" ry="12" fill="url(#bUID)"/>
+    <ellipse cx="50" cy="42" rx="36" ry="12" fill="url(#bUID)"/>
+    <ellipse cx="50" cy="28" rx="36" ry="12" fill="#ffe59a"/>
+    <ellipse cx="50" cy="28" rx="20" ry="6" fill="#ffd27a" opacity=".6"/>
+  </svg>`,
+
+  honey: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="hnUID" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffe08a"/><stop offset=".5" stop-color="#ffb020"/><stop offset="1" stop-color="#b56a00"/></linearGradient></defs>
+    <ellipse cx="50" cy="92" rx="28" ry="4" fill="#000" opacity=".3"/>
+    <rect x="24" y="36" width="52" height="54" rx="14" fill="url(#hnUID)"/>
+    <rect x="30" y="22" width="40" height="14" rx="4" fill="#8a5a20"/>
+    <rect x="38" y="48" width="24" height="18" rx="4" fill="#fff6d6"/>
+    <path d="M30 60 Q34 74 30 80" stroke="#ffb020" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </svg>`,
+
+  blintower: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="btUID" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#ffb36b"/><stop offset="1" stop-color="#8a2e00"/></radialGradient></defs>
+    <ellipse cx="50" cy="92" rx="34" ry="5" fill="#000" opacity=".3"/>
+    <ellipse cx="50" cy="74" rx="34" ry="10" fill="url(#btUID)"/>
+    <ellipse cx="50" cy="60" rx="34" ry="10" fill="url(#btUID)"/>
+    <ellipse cx="50" cy="46" rx="34" ry="10" fill="url(#btUID)"/>
+    <ellipse cx="50" cy="32" rx="34" ry="10" fill="#ffd27a"/>
+    <circle cx="50" cy="18" r="8" fill="#e53e3e"/>
+    <path d="M44 12 Q50 6 56 12" stroke="#2ed573" stroke-width="2" fill="none"/>
+  </svg>`
+};
+
+/* ==========================================================
+   ИВЕНТЫ (праздники). Подарки-еда доступны только во время ивента.
+   ========================================================== */
+const EVENTS = {
+  halloween: { name: "Хэллоуин", icon: "🎃", particles: ["🎃", "🦇", "🕸️", "🍬"], gifts: [
+    { id: "h1", name: "Тыквенный пирог", emoji: "🥧", price: 40,  c: ["#ffb347", "#7a3b00"], event: "halloween", svg: EVENT_ART.pie },
+    { id: "h2", name: "Леденец-череп",   emoji: "🍭", price: 30,  c: ["#ff8ad8", "#6a0a4f"], event: "halloween", svg: EVENT_ART.lollipop },
+    { id: "h3", name: "Ведьмин торт",    emoji: "🧁", price: 120, c: ["#9b6bff", "#2a0a5e"], event: "halloween", svg: EVENT_ART.witchcake }
+  ]},
+  newyear: { name: "Новый год", icon: "🎄", particles: ["❄️", "❄️", "❅", "⭐", "🎄"], gifts: [
+    { id: "ny1", name: "Имбирный пряник", emoji: "🍪", price: 35,  c: ["#e0a060", "#6b3a10"], event: "newyear", svg: EVENT_ART.gingerbread },
+    { id: "ny2", name: "Новогодний торт", emoji: "🎂", price: 80,  c: ["#ff9ab0", "#7a1030"], event: "newyear", svg: EVENT_ART.nycake },
+    { id: "ny3", name: "Шампанское",      emoji: "🍾", price: 150, c: ["#ffe066", "#8a6400"], event: "newyear", svg: EVENT_ART.champagne },
+    { id: "ny4", name: "Ёлочный пончик",  emoji: "🍩", price: 60,  c: ["#7fe0ff", "#0a4a6b"], event: "newyear", svg: EVENT_ART.donut }
+  ]},
+  easter: { name: "Пасха", icon: "🥚", particles: ["🥚", "🐣", "🌷", "🐰"], gifts: [
+    { id: "e1", name: "Крашенка",        emoji: "🥚", price: 20, c: ["#ffd1f0", "#8a3a7a"], event: "easter", svg: EVENT_ART.egg },
+    { id: "e2", name: "Кулич",           emoji: "🍞", price: 45, c: ["#ffd27a", "#8a5a00"], event: "easter", svg: EVENT_ART.kulich },
+    { id: "e3", name: "Творожная пасха", emoji: "🍰", price: 60, c: ["#fff3c4", "#9a8a40"], event: "easter", svg: EVENT_ART.paskha }
+  ]},
+  maslenitsa: { name: "Масленица", icon: "🥞", particles: ["🥞", "🌞", "🍯", "🌻"], gifts: [
+    { id: "m1", name: "Блин",          emoji: "🥞", price: 15,  c: ["#ffe39a", "#8a5a10"], event: "maslenitsa", svg: EVENT_ART.blin },
+    { id: "m2", name: "Мёд",           emoji: "🍯", price: 40,  c: ["#ffc04d", "#7a4a00"], event: "maslenitsa", svg: EVENT_ART.honey },
+    { id: "m3", name: "Блинная башня", emoji: "🥞", price: 100, c: ["#ff9e4d", "#7a2e00"], event: "maslenitsa", svg: EVENT_ART.blintower }
+  ]}
+};
+
+const GIFTS = [
+  { id: "g1", name: "Сердце", emoji: "❤️", price: 15, svg: GIFT_ART.heart },
+  { id: "g2", name: "Мишка",  emoji: "🧸", price: 25, svg: GIFT_ART.teddy },
+  { id: "g3", name: "Роза",   emoji: "🌹", price: 50, svg: GIFT_ART.rose },
+  { id: "g4", name: "Алмаз",  emoji: "💎", price: 100, svg: GIFT_ART.diamond }
+];
+
+/* Лимитированные (тираж ограничен, остаток виден в магазине) */
+const LIMITED = [
+  { id: "l1", name: "Золотая корона", emoji: "👑", price: 500, limit: 50, svg: LIM_ART.crown },
+  { id: "l2", name: "Золотой кубок",  emoji: "🏆", price: 800, limit: 20, svg: LIM_ART.cup }
+];
+
+const NFTS = [
+  { id: "n1", name: "Кот-Босс",         price: 100,  svg: NFT_ART_PLACEHOLDER() },
+  { id: "n2", name: "Синий Череп",      price: 200,  svg: NFT_ART_PLACEHOLDER() },
+  { id: "n3", name: "Пиксель Пришелец", price: 300,  svg: NFT_ART_PLACEHOLDER() },
+  { id: "n4", name: "Кибер Робот",      price: 500,  svg: NFT_ART_PLACEHOLDER() },
+  { id: "n5", name: "Космо Ракета",     price: 1000, svg: NFT_ART_PLACEHOLDER() }
+];
+
+const NFT_ART = {
+  cat: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="nCUID" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb347"/><stop offset="1" stop-color="#e67e22"/></linearGradient>
+      <linearGradient id="nCrUID" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe066"/><stop offset="1" stop-color="#d69e2e"/></linearGradient>
+    </defs>
+    <path d="M22 40 L24 14 L42 28 Q50 25 58 28 L76 14 L78 40 Q84 60 74 76 Q50 92 26 76 Q16 60 22 40Z" fill="url(#nCUID)"/>
+    <path d="M28 26 L30 20 L36 25Z M72 26 L70 20 L64 25Z" fill="#ff8fa3"/>
+    <ellipse cx="38" cy="54" rx="6" ry="7" fill="#fff"/>
+    <ellipse cx="62" cy="54" rx="6" ry="7" fill="#fff"/>
+    <ellipse cx="39" cy="55" rx="3" ry="5" fill="#111"/>
+    <ellipse cx="63" cy="55" rx="3" ry="5" fill="#111"/>
+    <path d="M47 64 L50 67 L53 64 Z" fill="#ff6b8b"/>
+    <path d="M50 67 Q46 72 42 70 M50 67 Q54 72 58 70" stroke="#5a2d0c" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M14 60 L30 63 M14 68 L30 67 M86 60 L70 63 M86 68 L70 67" stroke="#5a2d0c" stroke-width="1.6" stroke-linecap="round"/>
+    <path d="M31 24 L37 14 L43 24 L50 12 L57 24 L63 14 L69 24 L64 30 L36 30Z" fill="url(#nCrUID)" stroke="#b7791f" stroke-width="1.5"/>
+    <circle cx="50" cy="20" r="2.5" fill="#e53e3e"/>
+    <circle cx="37" cy="22" r="1.8" fill="#38bdf8"/>
+    <circle cx="63" cy="22" r="1.8" fill="#38bdf8"/>
+  </svg>`,
+
+  skull: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="nSUID" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fc4ff"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient></defs>
+    <path d="M50 10 C26 10 14 28 14 48 C14 62 22 70 30 74 L30 88 L70 88 L70 74 C78 70 86 62 86 48 C86 28 74 10 50 10Z" fill="url(#nSUID)"/>
+    <path d="M30 22 C36 16 44 14 50 14" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".4"/>
+    <ellipse cx="36" cy="50" rx="10" ry="12" fill="#0b1118"/>
+    <ellipse cx="64" cy="50" rx="10" ry="12" fill="#0b1118"/>
+    <circle cx="36" cy="48" r="2.5" fill="#60a5fa"/>
+    <circle cx="64" cy="48" r="2.5" fill="#60a5fa"/>
+    <path d="M50 62 L44 72 L50 70 L56 72Z" fill="#0b1118"/>
+    <path d="M38 82 V88 M46 82 V88 M54 82 V88 M62 82 V88" stroke="#0b1118" stroke-width="3"/>
+  </svg>`,
+
+  alien: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="nAUID" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#c8ffc0"/><stop offset="1" stop-color="#2f9e44"/></radialGradient></defs>
+    <path d="M50 30 L44 12 M50 30 L58 12" stroke="#2f9e44" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="44" cy="11" r="3.5" fill="#ff6b6b"/>
+    <circle cx="58" cy="11" r="3.5" fill="#ff6b6b"/>
+    <ellipse cx="50" cy="55" rx="34" ry="32" fill="url(#nAUID)"/>
+    <ellipse cx="34" cy="50" rx="11" ry="16" fill="#0b1118" transform="rotate(-20 34 50)"/>
+    <ellipse cx="66" cy="50" rx="11" ry="16" fill="#0b1118" transform="rotate(20 66 50)"/>
+    <circle cx="37" cy="45" r="3" fill="#fff"/>
+    <circle cx="69" cy="45" r="3" fill="#fff"/>
+    <path d="M42 78 Q50 84 58 78" stroke="#1b5e20" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <g fill="#1b5e20" opacity=".35"><rect x="22" y="68" width="6" height="6"/><rect x="72" y="68" width="6" height="6"/><rect x="28" y="74" width="6" height="6"/><rect x="66" y="74" width="6" height="6"/></g>
+  </svg>`,
+
+  robot: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="nRUID" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2e8f0"/><stop offset="1" stop-color="#5c6b7e"/></linearGradient>
+      <radialGradient id="nReUID" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#e0ffff"/><stop offset="1" stop-color="#00a8e0"/></radialGradient>
+    </defs>
+    <path d="M50 14 L50 24" stroke="#5c6b7e" stroke-width="3"/>
+    <circle cx="50" cy="12" r="5" fill="#ff4757"/>
+    <rect x="18" y="24" width="64" height="50" rx="14" fill="url(#nRUID)"/>
+    <rect x="26" y="34" width="48" height="22" rx="8" fill="#0b1118"/>
+    <circle cx="38" cy="45" r="6" fill="url(#nReUID)"/>
+    <circle cx="62" cy="45" r="6" fill="url(#nReUID)"/>
+    <rect x="36" y="62" width="28" height="4" rx="2" fill="#0b1118"/>
+    <rect x="30" y="78" width="40" height="14" rx="5" fill="url(#nRUID)"/>
+    <rect x="8" y="40" width="8" height="22" rx="4" fill="#5c6b7e"/>
+    <rect x="84" y="40" width="8" height="22" rx="4" fill="#5c6b7e"/>
+  </svg>`,
+
+  rocket: `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="nKUID" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#cbd5e1"/><stop offset="0.5" stop-color="#ffffff"/><stop offset="1" stop-color="#94a3b8"/></linearGradient>
+      <linearGradient id="nFUID" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd93d"/><stop offset="1" stop-color="#ff4d00" stop-opacity="0"/></linearGradient>
+    </defs>
+    <path d="M50 58 L62 62 L62 88 L50 80 L38 88 L38 62Z" fill="url(#nFUID)"/>
+    <path d="M50 6 C66 22 68 50 66 66 L34 66 C32 50 34 22 50 6Z" fill="url(#nKUID)"/>
+    <path d="M34 52 L18 68 L34 66Z M66 52 L82 68 L66 66Z" fill="#ef4444"/>
+    <circle cx="50" cy="38" r="8" fill="#0ea5e9" stroke="#334155" stroke-width="3"/>
+    <circle cx="48" cy="36" r="2" fill="#fff" opacity=".8"/>
+    <path d="M42 66 L58 66 L56 73 L44 73Z" fill="#475569"/>
+    <path d="M46 76 Q50 94 54 76Z" fill="#ffa502"/>
+  </svg>`
+};
+
+/* NFT: svg берём из NFT_ART уже после объявления ниже */
+function NFT_ART_PLACEHOLDER() { return ""; }
+
+/* ==========================================================
+   РЕДКОСТЬ, КАТАЛОГИ, ХЕЛПЕРЫ
+   ========================================================== */
+const RARITY = {
+  common:    { label: "Обычный",      color: "#8b9eb0", style: "nft-style-simple", bg: "nft-bg-gray" },
+  rare:      { label: "Редкий",       color: "#4fa8ff", style: "nft-style-rainbow", bg: "nft-bg-rainbow" },
+  epic:      { label: "Эпический",    color: "#b57bff", style: "nft-fx-neon",      bg: "nft-bg-aurora" },
+  legendary: { label: "Легендарный",  color: "#FFD700", style: "nft-fx-holo",      bg: "nft-bg-space" }
+};
+const RAR_ORDER = ["common", "rare", "epic", "legendary"];
+const RAR_WEIGHTS = [60, 25, 12, 3];
+const UPG_CHANCE = [0.7, 0.45, 0.2, 0];
+const UPG_COST = 150;
+
+const SELL_WINDOW = 21 * 24 * 60 * 60 * 1000;
+const canSellGift = g => !g.at || (Date.now() - g.at) < SELL_WINDOW;
+
+function rollRarity(minIdx = 0) {
+  const w = RAR_WEIGHTS.slice(minIdx);
+  const total = w.reduce((a, b) => a + b, 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < w.length; i++) {
+    r -= w[i];
+    if (r < 0) return RAR_ORDER[minIdx + i];
+  }
+  return RAR_ORDER[RAR_ORDER.length - 1];
+}
+
+function styleOf(nftId, styles) {
+  const s = (styles || {})[nftId];
+  if (!s) return { style: "nft-style-simple", bg: "nft-bg-gray", rarity: null };
+  if (s.rarity && RARITY[s.rarity]) return { ...RARITY[s.rarity], rarity: s.rarity };
+  return { style: s.style || "nft-style-simple", bg: s.bg || "nft-bg-gray", rarity: null };
+}
+
+const nftBase = nftId => NFTS.find(n => n.id === nftId.split("_")[0]) || NFTS[0];
+const isBaseOf = (id, baseId) => id.split("_")[0] === baseId && !id.includes("_upg");
+
+function nftCardHtml(nftId, styles, extraCls = "") {
+  const base = nftBase(nftId);
+  const s = styleOf(nftId, styles);
+  return `<div class="art nftcard ${extraCls} ${s.bg} ${s.style}">${inst(base.svg)}</div>`;
+}
+
+const allGifts = () => [...GIFTS, ...LIMITED, ...Object.values(EVENTS).flatMap(e => e.gifts)];
+const giftById = key => allGifts().find(g => g.id === key || g.name === key);
+const giftAvailable = g => !g.event || g.event === activeEventKey;
+
+function giftArtHtml(g, cls = "art") {
+  if (!g) return `<div class="${cls}" style="font-size:44px;display:flex;align-items:center;justify-content:center">🎁</div>`;
+  if (g.svg) return `<div class="${cls}">${inst(g.svg)}</div>`;
+  return `<div class="${cls} emojiArt" style="background:radial-gradient(circle at 35% 30%, ${g.c[0]}, ${g.c[1]})">${g.emoji}</div>`;
+}
+
+const $ = id => document.getElementById(id);
+const normName = s => String(s || "").trim().toLowerCase();
+const chatKey = (a, b) => [a, b].sort().join("_");
+const userRef = name => ref(db, "users/" + name);
+const evRef = ref(db, "events/active");
+const toArr = v => Array.isArray(v) ? v.filter(x => x != null) : Object.values(v || {});
+const previewOf = (text, isSticker, type) => {
+  if (type === "gift") return "🎁 Подарок";
+  if (type === "photo") return "Фото";
+  if (isSticker) return "Стикер";
+  return text;
+};
+
+let me = null, profile = null, unsubChat = null, activeChat = null, viewingProfile = null, activeProfileTab = 'gifts', shopCat = 'gift', currentNftId = null, invData = null;
+let loginTime = 0;
+let activeEventKey = null;
+let adminEventPick = null;
+let stockCache = {};
+
+// NFT-арт подставляем после объявления NFT_ART
+NFTS[0].svg = NFT_ART.cat;
+NFTS[1].svg = NFT_ART.skull;
+NFTS[2].svg = NFT_ART.alien;
+NFTS[3].svg = NFT_ART.robot;
+NFTS[4].svg = NFT_ART.rocket;
+
+// ЛОГИКА ОНБОРДИНГА
+const onboardSlides = [
+  { icon: "🔐", title: "Полное шифрование", desc: "Сквозное шифрование для всех сообщений и звонков." },
+  { icon: "🕵️", title: "Анонимная личность", desc: "Не требуется номер телефона. Ваша личность приватна." },
+  { icon: "🗑️", title: "Исчезающие сообщения", desc: "Таймер автоудаления. Сообщения исчезают после прочтения." },
+  { icon: "🛡️", title: "Нулевой сбор данных", desc: "Мы не собираем ваши данные." }
+];
+let currentSlide = 0;
+
+window.nextOnboard = () => {
+  currentSlide++;
+  if (currentSlide >= onboardSlides.length) return skipOnboard();
+  const s = onboardSlides[currentSlide];
+  $("onboardContent").innerHTML = `
+    <div style="font-size:80px;margin-bottom:20px;">${s.icon}</div>
+    <h2 style="font-size:24px;margin-bottom:15px;font-weight:bold;">${s.title}</h2>
+    <p style="color:#888;font-size:15px;line-height:1.4;">${s.desc}</p>
+  `;
+};
+window.skipOnboard = () => {
+  $("vOnboarding").classList.remove("active");
+  $("vAuth").classList.add("active");
+  localStorage.setItem("onboarded", "true");
+};
+if (localStorage.getItem("onboarded")) {
+  window.addEventListener('load', () => {
+    $("vOnboarding").classList.remove("active");
+    $("vAuth").classList.add("active");
+  });
+}
+
+function toast(msg, ok = false) {
+    const t = $("toast"); t.textContent = msg;
+    t.className = "toast show" + (ok ? " ok" : "");
+    clearTimeout(t._t);
+    t._t = setTimeout(() => t.classList.remove("show"), 2500);
+}
+function show(id) {
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+    $(id).classList.add("active");
+    $("bottomNav").classList.toggle("hidden", id === "vAuth" || id === "vOnboarding" || !me);
+    if (id === "vChats") renderChats();
+    if (id === "vShop") renderShop();
+}
+const openModal = id => $(id).classList.add("active");
+const closeModal = id => $(id).classList.remove("active");
+
+window.show = show;
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+/* ==========================================================
+   ИВЕНТЫ: состояние, частицы, баннер, админ-панель
+   ========================================================== */
+function applyEventUI() {
+  const ev = activeEventKey ? EVENTS[activeEventKey] : null;
+
+  const fx = $("fxLayer");
+  fx.innerHTML = "";
+  if (ev) {
+    for (let i = 0; i < 40; i++) {
+      const p = document.createElement("span");
+      p.className = "fxp";
+      p.textContent = ev.particles[i % ev.particles.length];
+      p.style.left = Math.random() * 100 + "%";
+      p.style.fontSize = (12 + Math.random() * 16) + "px";
+      p.style.animationDuration = (6 + Math.random() * 8) + "s";
+      p.style.animationDelay = (-Math.random() * 12) + "s";
+      fx.appendChild(p);
+    }
+  }
+
+  const banner = $("evBanner");
+  banner.classList.toggle("hidden", !ev);
+  if (ev) banner.textContent = `${ev.icon} Ивент: ${ev.name}`;
+
+  if ($("evStatus")) $("evStatus").textContent = ev ? `Сейчас идёт: ${ev.icon} ${ev.name}` : "Ивент не идёт";
+
+  if ($("vShop").classList.contains("active")) renderShop();
+}
+
+function renderEventPick() {
+  $("evPick").innerHTML = Object.entries(EVENTS).map(([k, e]) =>
+    `<button class="evPickBtn ${adminEventPick === k ? "on" : ""}" onclick="adminPickEvent('${k}')">${e.icon} ${e.name}</button>`
+  ).join("");
+}
+
+window.adminPickEvent = (key) => {
+  adminEventPick = key;
+  renderEventPick();
+};
+
+window.startEvent = async () => {
+  if (!me || me.role !== "ADMIN") return;
+  if (!adminEventPick) return toast("Сначала выберите ивент");
+  await set(evRef, { id: adminEventPick, startedAt: Date.now() });
+  toast(`Ивент «${EVENTS[adminEventPick].name}» запущен!`, true);
+};
+
+window.endEvent = async () => {
+  if (!me || me.role !== "ADMIN") return;
+  await set(evRef, null);
+  toast("Ивент завершён", true);
+};
+
+renderEventPick();
+onValue(evRef, snap => {
+  const v = snap.val();
+  activeEventKey = v && v.id && EVENTS[v.id] ? v.id : null;
+  applyEventUI();
+});
+
+// Остатки лимитированных подарков (общие для всех)
+onValue(ref(db, "giftStock"), snap => {
+  stockCache = snap.val() || {};
+  if ($("vShop").classList.contains("active")) renderShop();
+});
+const stockLeft = g => (stockCache[g.id] !== undefined && stockCache[g.id] !== null) ? stockCache[g.id] : g.limit;
+
+// ФОТО ЗАГРУЗКА
+window.uploadPhoto = function(type) {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            const base64 = event.target.result;
+            if(type === 'avatar') {
+                await update(userRef(me.name), { avatar: base64 });
+                toast("Аватарка обновлена!", true);
+                renderProfile(me.name);
+            } else if (type === 'banner') {
+                await update(userRef(me.name), { banner: base64 });
+                toast("Баннер обновлен!", true);
+            } else if (type === 'wallpaper') {
+                await update(userRef(me.name), { wallpaper: base64 });
+                toast("Обои чата обновлены!", true);
+                if(activeChat) openChat(activeChat);
+            }
+        };
+        reader.readAsDataURL(file);
+    };
+    input.click();
+};
+
+// ВХОД
+$("authNick").addEventListener("input", () => { $("adminSecretBox").classList.toggle("hidden", normName($("authNick").value) !== ADMIN_NICK); });
+$("btnLogin").addEventListener("click", () => login(false));
+$("btnRegister").addEventListener("click", () => register());
+
+window.addEventListener('load', () => {
+    const savedUser = localStorage.getItem('savedUser');
+    if (savedUser) {
+        try { const u = JSON.parse(savedUser); $("authNick").value = u.name; login(true); }
+        catch(e) { localStorage.removeItem('savedUser'); }
+    }
+});
+
+async function login(isAuto = false) {
+    $("authError").style.display = "none";
+    const name = normName($("authNick").value);
+    const pass = $("authPass").value.trim();
+    if (!name) return $("authError").textContent = "Введите ник!";
+
+    if (name === ADMIN_NICK && !isAuto) {
+        if ($("secretPhrase").value.trim() !== ADMIN_SECRET) return $("authError").textContent = "Неверная фраза!";
+    }
+
+    try {
+        const snap = await get(userRef(name));
+        if (!snap.exists()) {
+            if (name === ADMIN_NICK) {
+                await set(userRef(name), { balance: 9999999, nex: 9999999, usdt: 9999, gifts: [], nfts: [], chats: [], password: pass, profileBg: 'bg-blue', bio: "Главный админ", verified: true, premium: true, role: "ADMIN", phone: "+375000000000", avatar: "", clan: "ADMIN", banner: "", msgColor: "#2d7aff", nftStyles: {}, devices: {}, createdAt: Date.now() });
+            } else {
+                return $("authError").textContent = "Аккаунт не найден.";
+            }
+        } else {
+            const data = snap.val();
+            if (!isAuto && data.password && data.password !== pass) return $("authError").textContent = "Неверный пароль!";
+            if (data.banned) return $("authError").textContent = "Вы забанены!";
+            if (data.frozen) return $("authError").textContent = "Аккаунт заморожен!";
+        }
+
+        const currentData = (await get(userRef(name))).val();
+        me = { name, role: currentData.role === "ADMIN" || name === ADMIN_NICK ? "ADMIN" : "USER" };
+        loginTime = Date.now();
+
+        if (!isAuto) {
+            const deviceInfo = navigator.userAgent.includes("Mobi") ? "📱 Телефон" : "💻 Компьютер";
+            const sessionId = "dev_" + loginTime;
+            const devices = currentData.devices || {};
+            devices[sessionId] = { device: deviceInfo, ip: "Скрыт", time: loginTime };
+            await update(userRef(name), { devices: devices });
+        }
+
+        const updateProfileUI = (snapshot) => {
+            profile = snapshot.val();
+            if (!profile) return;
+            if (!profile.gifts) profile.gifts = [];
+            if (!profile.nfts) profile.nfts = [];
+            if (!profile.nftStyles) profile.nftStyles = {};
+
+            document.querySelectorAll(".balanceTxt").forEach(e => e.textContent = (profile.balance || 0) + " 🪙");
+            document.querySelectorAll(".nexTxt").forEach(e => e.textContent = (profile.nex || 0) + " NEX");
+
+            $("navAdmin").classList.toggle("hidden", me.role !== "ADMIN");
+            $("buyPremiumBtn").style.display = profile.premium ? "none" : "flex";
+            $("premSettings").style.display = profile.premium ? "block" : "none";
+            $("btnSticker").style.display = profile.premium ? "block" : "none";
+            $("clanStatus").textContent = profile.clan ? `Ваш клан: ${profile.clan}` : "У вас нет клана";
+
+            renderDevices(profile.devices || {});
+
+            if($("vProfile").classList.contains('active') && !viewingProfile) renderProfile(me.name);
+            if(activeChat) applyWallpaper();
+        };
+
+        onValue(userRef(me.name), updateProfileUI);
+        show("vChats");
+        toast("Успешный вход!", true);
+        localStorage.setItem('savedUser', JSON.stringify({ name: me.name }));
+    } catch (e) { $("authError").textContent = "Ошибка: " + e.message; }
+}
+
+async function register() {
+    const name = normName($("authNick").value), pass = $("authPass").value.trim();
+    if (name.length < 3) return toast("Ник слишком короткий");
+    if (pass.length < 5) return toast("Пароль минимум 5 символов");
+
+    try {
+        const res = await runTransaction(userRef(name), cur => {
+            if (cur === null) {
+                return { balance: 100, nex: 100, usdt: 0, gifts: [], nfts: [], chats: [], password: pass, profileBg: 'bg-blue', bio: "Пользователь Nexus", verified: false, premium: false, role: "USER", phone: "+0000000000", avatar: "", clan: "", banner: "", msgColor: "#2d7aff", nftStyles: {}, devices: {}, createdAt: Date.now() };
+            }
+            return undefined;
+        });
+        if (!res.committed) return toast("Этот ник уже занят!");
+
+        $("authPass").value = pass;
+        toast("Аккаунт создан!", true);
+        login(true);
+    } catch (e) { toast("Ошибка: " + e.message); }
+}
+
+function renderDevices(devices) {
+    const list = $("deviceList");
+    if (!list) return;
+    if (Object.keys(devices).length === 0) { list.innerHTML = "Нет данных"; return; }
+    list.innerHTML = "";
+    Object.entries(devices).sort((a,b) => b[1].time - a[1].time).forEach(([id, d]) => {
+        const date = new Date(d.time).toLocaleString("ru-RU", {day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'});
+        list.innerHTML += `<div style="padding:8px;border-bottom:1px solid var(--line);">
+            <b>${d.device}</b><br><span style="font-size:11px;color:var(--muted)">${d.ip} | ${date}</span>
+        </div>`;
+    });
+}
+window.logoutAllDevices = async () => { await update(userRef(me.name), { devices: {} }); toast("Сброшено!", true); renderDevices({}); };
+
+// ЧАТЫ
+async function renderChats(filter = "") {
+    const list = $("chatList"); list.innerHTML = "";
+    if(!profile || !profile.chats) return;
+
+    const chats = toArr(profile.chats).sort((a, b) => (b.time || 0) - (a.time || 0));
+
+    for (const c of chats) {
+        if(filter && !c.name.includes(filter)) continue;
+        let uData = c.name.startsWith("GROUP_") ? { avatar: "", premium: false, verified: true } : ((await get(userRef(c.name))).val() || {});
+        const el = document.createElement("div"); el.className = "row";
+        el.innerHTML = `
+        <div class="av ${uData.premium ? 'premium' : ''}">${uData.avatar ? `<img src="${uData.avatar}">` : (c.name.startsWith("GROUP_") ? '👥' : c.name[0].toUpperCase())}</div>
+        <div class="grow">
+            <div style="font-weight:bold;display:flex;align-items:center;gap:5px">${c.name.replace("GROUP_", "")} ${uData.verified ? '<span style="color:#4fa8ff">✔</span>' : ''}</div>
+            <div class="sub">${c.last || 'Нажмите чтобы открыть'}</div>
+        </div>`;
+        el.onclick = () => openChat(c.name);
+        list.appendChild(el);
+    }
+}
+
+let searchTimer;
+$("searchInput").oninput = () => { clearTimeout(searchTimer); searchTimer = setTimeout(doSearch, 250); };
+async function doSearch() {
+    const q = normName($("searchInput").value);
+    if (!q) return renderChats();
+    const list = $("chatList");
+    const snap = await get(ref(db, "users"));
+    if (!snap.exists()) return;
+    const users = snap.val();
+    list.innerHTML = "";
+    Object.keys(users).filter(n => n.includes(q)).forEach(n => {
+        if(n === me.name) return;
+        const el = document.createElement("div"); el.className = "row";
+        el.innerHTML = `<div class="av">${n[0].toUpperCase()}</div><div class="grow"><div style="font-weight:bold;">${n}</div></div>`;
+        el.onclick = () => openChat(n);
+        list.appendChild(el);
+    });
+}
+
+async function applyWallpaper() {
+    if(profile.wallpaper) {
+        $("chatWallpaper").style.backgroundImage = `url(${profile.wallpaper})`;
+        $("chatWallpaper").style.opacity = "0.4";
+    } else {
+        $("chatWallpaper").style.backgroundImage = "none";
+    }
+}
+
+async function openChat(target) {
+    activeChat = target;
+    const isGroup = target.startsWith("GROUP_");
+    $("chatTitle").textContent = target.replace("GROUP_", "");
+
+    if(isGroup) {
+        $("chatAvatar").innerHTML = '👥';
+    } else {
+        const uData = (await get(userRef(target))).val() || {};
+        if(uData.avatar) $("chatAvatar").innerHTML = `<img src="${uData.avatar}">`;
+        else $("chatAvatar").textContent = target[0].toUpperCase();
+    }
+
+    $("msgs").innerHTML = "";
+    show("vChat");
+    applyWallpaper();
+
+    if (!isGroup && target !== me.name) {
+        let chats = toArr(profile.chats);
+        if (!chats.find(c => c.name === target)) {
+            chats.push({ name: target, time: Date.now() });
+            await update(userRef(me.name), { chats });
+        }
+    }
+
+    if (unsubChat) unsubChat();
+    const path = isGroup ? ref(db, "groupMessages/" + target) : ref(db, "chats/" + chatKey(me.name, target));
+
+    unsubChat = onChildAdded(path, snap => {
+        const m = snap.val();
+        if (!m) return;
+
+        const div = document.createElement("div");
+        div.className = "msg " + (profile.bubbleStyle || 'bub-default') + (m.from === me.name ? " out" : "") + (m.type === "gift" ? " giftmsg" : "");
+        if (m.from === me.name && profile.msgColor && m.type !== "gift") div.style.background = profile.msgColor;
+
+        const header = isGroup && m.from !== me.name ? `<div style="font-size:11px;font-weight:bold;color:var(--gold);margin-bottom:2px">${m.from}</div>` : "";
+
+        let contentHtml = "";
+        if (m.type === "gift") {
+            contentHtml = giftArtHtml(giftById(m.text), "giftbig");
+        } else if (m.burn && m.viewed) {
+            contentHtml = `<i style="color:var(--danger);opacity:0.7;">🔥 Сообщение сгорело</i>`;
+        } else if (m.burn) {
+            contentHtml = `<div style="cursor:pointer;color:var(--gold);font-weight:bold;" onclick="viewBurnMessage('${snap.key}', '${m.from}', this, '${m.type || 'text'}')">🔥 Нажмите чтобы открыть</div>`;
+        } else if (m.type === 'photo') {
+            contentHtml = `<img src="${m.text}" onclick="window.open('${m.text}', '_blank')">`;
+        } else {
+            contentHtml = `<div class="${m.isSticker ? 'stick' : ''}">${m.text}</div>`;
+        }
+
+        div.innerHTML = `${header}${contentHtml}<div class="meta">${new Date(m.time).toLocaleTimeString("ru-RU", {hour:"2-digit", minute:"2-digit"})}</div>`;
+
+        $("msgs").appendChild(div);
+        $("msgsWrap").scrollTop = $("msgsWrap").scrollHeight;
+    });
+}
+
+window.viewBurnMessage = async function(msgKey, from, element, type) {
+    if(from === me.name) {
+        if(type === 'photo') {
+            const snap = await get(ref(db, (activeChat.startsWith("GROUP_") ? "groupMessages/" + activeChat : "chats/" + chatKey(me.name, activeChat)) + "/" + msgKey));
+            window.open(snap.val().text, '_blank');
+        } else {
+            alert("Вы не можете прочитать своё же секретное сообщение в оффлайн режиме. Оно сгорит после прочтения другом.");
+        }
+        return;
+    }
+
+    const msgPath = (activeChat.startsWith("GROUP_") ? "groupMessages/" + activeChat : "chats/" + chatKey(me.name, activeChat)) + "/" + msgKey;
+    const snap = await get(ref(db, msgPath));
+    const m = snap.val();
+    if(!m || m.viewed) return;
+
+    if(m.type === 'photo') {
+        window.open(m.text, '_blank');
+    } else {
+        alert("🔥 Секретное сообщение:\n\n" + m.text);
+    }
+
+    await update(ref(db, msgPath), { viewed: true });
+    element.parentElement.innerHTML = `<i style="color:var(--danger);opacity:0.7;">🔥 Сообщение сгорело</i>`;
+};
+
+window.openFriendProfile = function() {
+    if(!activeChat) return;
+    if(activeChat.startsWith("GROUP_")) return toast("Это группа");
+    openProfile(activeChat);
+};
+
+$("chatBack").onclick = () => { if (unsubChat) { unsubChat(); unsubChat = null; } activeChat = null; show("vChats"); };
+
+async function sendMessage(text, isSticker = false, type = 'text') {
+    if (!text || !activeChat) return;
+    const isGroup = activeChat.startsWith("GROUP_");
+    const msgRef = isGroup ? ref(db, "groupMessages/" + activeChat) : ref(db, "chats/" + chatKey(me.name, activeChat));
+    await push(msgRef, { from: me.name, text, isSticker, type, time: Date.now() });
+
+    if (!isGroup) {
+        const preview = previewOf(text, isSticker, type);
+        const otherSnap = await get(userRef(activeChat));
+        if (otherSnap.exists()) {
+            const otherData = otherSnap.val();
+            const otherChats = toArr(otherData.chats);
+            if (!otherChats.find(c => c.name === me.name)) {
+                otherChats.push({ name: me.name, time: Date.now(), last: preview });
+                await update(userRef(activeChat), { chats: otherChats });
+            }
+        }
+        const myChats = toArr(profile.chats).map(c => c.name === activeChat ? { ...c, last: preview, time: Date.now() } : c);
+        await update(userRef(me.name), { chats: myChats });
+    }
+}
+
+$("sendBtn").onclick = () => { const input = $("msgInput"); const text = input.value.trim(); if (!text) return; input.value = ""; sendMessage(text); };
+$("msgInput").onkeydown = e => { if (e.key === "Enter") $("sendBtn").click(); };
+$("btnSticker").onclick = () => openModal("mStickers");
+window.sendSticker = async (stick) => { closeModal("mStickers"); if (!activeChat) return; sendMessage(stick, true); };
+
+// СКРЕПКА (ВЛОЖЕНИЯ)
+$("btnAttach").onclick = () => openModal("mAttach");
+
+window.sendSecretPhoto = function() {
+    closeModal("mAttach");
+    $("secretPhotoInput").click();
+};
+
+window.handleSecretPhoto = function(event) {
+    const file = event.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const base64 = e.target.result;
+        await sendMessage(base64, false, 'photo');
+        const isGroup = activeChat.startsWith("GROUP_");
+        const path = isGroup ? "groupMessages/" + activeChat : "chats/" + chatKey(me.name, activeChat);
+        const snap = await get(ref(db, path));
+        let lastKey = null;
+        snap.forEach(child => { lastKey = child.key; });
+        if(lastKey) await update(ref(db, path + "/" + lastKey), { burn: true, viewed: false });
+        toast("Секретное фото отправлено!", true);
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+};
+
+window.sendSecretText = async function() {
+    closeModal("mAttach");
+    const text = prompt("Введите секретный текст:");
+    if(!text) return;
+    await sendMessage(text);
+
+    const isGroup = activeChat.startsWith("GROUP_");
+    const path = isGroup ? "groupMessages/" + activeChat : "chats/" + chatKey(me.name, activeChat);
+    const snap = await get(ref(db, path));
+    let lastKey = null;
+    snap.forEach(child => { lastKey = child.key; });
+    if(lastKey) await update(ref(db, path + "/" + lastKey), { burn: true, viewed: false });
+    toast("Секретное сообщение отправлено!", true);
+};
+
+// ПОДАРКИ В ЧАТЕ (обычные + подарки активного ивента; лимитированные только в магазине)
+function giftCatalog() {
+  const list = [...GIFTS];
+  if (activeEventKey) list.push(...EVENTS[activeEventKey].gifts);
+  return list;
+}
+
+$("btnSendGift").onclick = () => {
+    if(!activeChat) return;
+    const grid = $("chatGiftsGrid"); grid.innerHTML = "";
+    giftCatalog().forEach(g => {
+        grid.innerHTML += `<div class="item" onclick="sendGiftToChat('${g.id}')">
+            ${giftArtHtml(g, "art")}<div>${g.name}</div><div class="price">${g.price} 🪙</div>
+        </div>`;
+    });
+    openModal("mChatGifts");
+};
+
+window.sendGiftToChat = async (id) => {
+    const g = giftById(id);
+    if (!g) return;
+    if (g.limit) return toast("Лимитированные подарки покупаются только в магазине");
+    if (!giftAvailable(g)) return toast("Этот подарок только во время ивента");
+    if (profile.balance < g.price) return toast("Недостаточно Coin!");
+
+    await update(userRef(me.name), { balance: profile.balance - g.price });
+    await sendMessage(g.id, false, 'gift');
+
+    if(activeChat && !activeChat.startsWith("GROUP_")) {
+        const friendSnap = await get(userRef(activeChat));
+        if(friendSnap.exists()){
+            const fData = friendSnap.val();
+            const fGifts = toArr(fData.gifts);
+            fGifts.push({ id: g.id, name: g.name, emoji: g.emoji, at: Date.now() });
+            await update(userRef(activeChat), { gifts: fGifts });
+            toast(`Подарок отправлен ${activeChat}!`, true);
+        }
+    } else {
+        toast("Подарок отправлен в группу!", true);
+    }
+    closeModal("mChatGifts");
+};
+
+// СОЗДАНИЕ КАНАЛА С ЮЗЕРНЕЙМОМ
+$("btnNewGroup").onclick = async () => {
+    const name = prompt("Введите название канала:"); if(!name) return;
+    let uname = prompt("Юзернейм канала (латиница, цифры, _; 4–32 символа):");
+    if(!uname) return;
+    uname = normName(uname).replace(/^@/, "");
+    if (!/^[a-z0-9_]{4,32}$/.test(uname)) return toast("Неверный юзернейм");
+
+    const claim = await runTransaction(ref(db, "usernames/" + uname), cur => {
+        if (cur === null) return { type: "channel", name, owner: me.name };
+        return undefined;
+    });
+    if (!claim.committed) return toast("Этот юзернейм уже занят!");
+
+    await push(ref(db, "channels"), { name, username: uname, link: "#join_" + uname, owner: me.name, admins: [me.name] });
+    let chats = toArr(profile.chats);
+    chats.push({ name: "GROUP_" + name, time: Date.now() });
+    await update(userRef(me.name), { chats });
+    toast(`Канал @${uname} создан!`, true);
+    renderChats();
+};
+
+// ПРОФИЛЬ
+window.openProfile = async function(targetName) {
+    viewingProfile = targetName === me.name ? null : targetName;
+    $("profHeader").textContent = targetName === me.name ? "Мой профиль" : "Профиль " + targetName;
+    $("profOwn").style.display = targetName === me.name ? "block" : "none";
+    show("vProfile");
+    renderProfile(targetName);
+}
+
+async function renderProfile(targetName) {
+    const snap = await get(userRef(targetName));
+    if(!snap.exists()) return toast("Профиль не найден");
+    const data = snap.val();
+
+    const bgEl = $("profBg");
+    if (data.banner) {
+        bgEl.style.backgroundImage = `url(${data.banner})`;
+        bgEl.className = "profBg";
+    } else {
+        bgEl.style.backgroundImage = "none";
+        bgEl.className = "profBg " + (data.profileBg || 'bg-blue');
+    }
+
+    const av = $("profAv");
+    av.className = "profAv " + (data.premium ? 'premium' : '');
+    if(data.avatar) av.innerHTML = `<img src="${data.avatar}">`;
+    else av.textContent = targetName[0].toUpperCase();
+
+    $("profNick").innerHTML = "@" + targetName + (data.verified ? ' <span style="color:#4fa8ff;font-size:18px">✔</span>' : '');
+    $("profClan").textContent = data.clan ? `🛡️ Клан: ${data.clan}` : "";
+    $("profBio").textContent = data.bio || "Нет описания";
+    $("profBalance").textContent = data.balance || 0;
+    $("profNex").textContent = data.nex || 0;
+    renderInventory(data);
+
+    if(!viewingProfile) {
+        const timePassed = Date.now() - loginTime;
+        if(timePassed > 3600000) {
+            $("passChangeLock").innerHTML = `<span style="color:var(--success)">✅ Вы можете сменить пароль</span>`;
+            $("btnChangePass").disabled = false;
+            $("btnChangePass").style.opacity = "1";
+        } else {
+            const minsLeft = Math.ceil((3600000 - timePassed) / 60000);
+            $("passChangeLock").innerHTML = `<span style="color:var(--gold)">⚠️ Смена пароля будет доступна через ${minsLeft} мин. (защита аккаунта)</span>`;
+            $("btnChangePass").disabled = true;
+            $("btnChangePass").style.opacity = "0.5";
+        }
+    }
+}
+
+window.changePassword = async function() {
+    const newPass = $("newPassInput").value.trim();
+    if(newPass.length < 5) return toast("Пароль минимум 5 символов!");
+    await update(userRef(me.name), { password: newPass });
+    toast("Пароль успешно изменен!", true);
+    $("newPassInput").value = "";
+};
+
+$("profBack").onclick = () => show("vChats");
+$("logoutBtn").onclick = () => { localStorage.removeItem('savedUser'); location.reload(); };
+$("tabGifts").onclick = () => { activeProfileTab = 'gifts'; $("tabGifts").classList.add('on'); $("tabNft").classList.remove('on'); renderProfile(viewingProfile || me.name); };
+$("tabNft").onclick = () => { activeProfileTab = 'nft'; $("tabNft").classList.add('on'); $("tabGifts").classList.remove('on'); renderProfile(viewingProfile || me.name); };
+
+function renderInventory(data) {
+    invData = data;
+    const grid = $("invGrid"); grid.innerHTML = "";
+
+    if (activeProfileTab === 'gifts') {
+        const gifts = toArr(data.gifts);
+        if (gifts.length === 0) return grid.innerHTML = '<div class="sub center">Подарков нет</div>';
+        gifts.forEach((g, i) => {
+            const gd = giftById(g.id) || giftById(g.name);
+            const visual = gd ? giftArtHtml(gd, "art") : `<div class="ic">${g.emoji || '🎁'}</div>`;
+            const canSell = !viewingProfile && canSellGift(g);
+            grid.innerHTML += `<div class="item">
+                ${visual}<div>${g.name}</div>
+                ${canSell ? `<button class="small" style="margin-top:5px;background:var(--danger);border:none;padding:4px;border-radius:5px;color:#fff;font-size:10px;" onclick="sellGift(${i})">Продать</button>` : ''}
+                ${(!viewingProfile && !canSell) ? `<div style="font-size:10px;color:var(--muted);margin-top:5px;">Продажа закрыта (21 день)</div>` : ''}
+            </div>`;
+        });
+    } else {
+        const nfts = toArr(data.nfts);
+        if (nfts.length === 0) return grid.innerHTML = '<div class="sub center">Нет NFT</div>';
+
+        nfts.forEach(nftId => {
+            const isUpg = nftId.includes('_upg');
+            const base = nftBase(nftId);
+            const baseId = nftId.split('_')[0];
+            const baseCount = nfts.filter(id => isBaseOf(id, baseId)).length;
+            const s = styleOf(nftId, data.nftStyles);
+
+            grid.innerHTML += `<div class="item" onclick="openNftView('${nftId}')">
+                ${nftCardHtml(nftId, data.nftStyles)}
+                <div style="margin-top:5px">${base.name} ${isUpg ? '👑' : ''} <span class="sub" style="display:inline">x${baseCount}</span></div>
+                ${s.rarity ? `<div style="font-size:11px;color:${s.color};font-weight:bold">${s.label}</div>` : ''}
+                ${(!viewingProfile && !isUpg && baseCount >= 4) ? `<button class="small" style="margin-top:5px;background:#ed8936;border:none;padding:5px;border-radius:5px;color:#fff;font-size:10px;" onclick="event.stopPropagation(); startUpgrade('${baseId}')">Крафт (4 шт)</button>` : ''}
+            </div>`;
+        });
+    }
+}
+
+// ПРОДАЖА И ПОДАРКИ
+window.sellGift = async function(index) {
+    let gifts = toArr(profile.gifts);
+    let item = gifts[index];
+    if(!item) return;
+    if (!canSellGift(item)) return toast("Срок продажи (21 день) истёк");
+    const price = (giftById(item.id) || giftById(item.name))?.price || 10;
+    let sellPrice = Math.floor(price / 2);
+    gifts.splice(index, 1);
+    await update(userRef(me.name), { gifts: gifts, balance: profile.balance + sellPrice });
+    toast(`Подарок продан за ${sellPrice} Coin`, true);
+    renderProfile(me.name);
+};
+
+window.sellNft = async function() {
+    if(!currentNftId) return;
+    let nfts = toArr(profile.nfts);
+    let idx = nfts.indexOf(currentNftId);
+    if(idx === -1) return;
+    let base = nftBase(currentNftId);
+    let sellPrice = Math.floor(base.price / 2);
+    nfts.splice(idx, 1);
+    let styles = { ...(profile.nftStyles || {}) }; delete styles[currentNftId];
+    await update(userRef(me.name), { nfts: nfts, nftStyles: styles, balance: profile.balance + sellPrice });
+    closeModal('mNftView');
+    toast(`NFT продан за ${sellPrice} Coin`, true);
+    renderProfile(me.name);
+};
+
+window.giftNft = async function() {
+    if(profile.balance < 250) return toast("Нужно 250 Coin для пересылки!");
+    let friend = prompt("Введите ник друга (кому подарить):");
+    if(!friend) return;
+    friend = normName(friend);
+    if(friend === me.name) return toast("Нельзя подарить себе");
+    let friendSnap = await get(userRef(friend));
+    if(!friendSnap.exists()) return toast("Друг не найден");
+
+    let nfts = toArr(profile.nfts);
+    let idx = nfts.indexOf(currentNftId);
+    if(idx === -1) return;
+    nfts.splice(idx, 1);
+    let styles = { ...(profile.nftStyles || {}) };
+    let styleToGive = styles[currentNftId] || { style: 'nft-style-simple', bg: 'nft-bg-gray' };
+    delete styles[currentNftId];
+
+    let friendNfts = toArr(friendSnap.val().nfts);
+    friendNfts.push(currentNftId);
+    let friendStyles = { ...(friendSnap.val().nftStyles || {}) };
+    friendStyles[currentNftId] = styleToGive;
+
+    await update(userRef(me.name), { nfts: nfts, nftStyles: styles, balance: profile.balance - 250 });
+    await update(userRef(friend), { nfts: friendNfts, nftStyles: friendStyles });
+    closeModal('mNftView');
+    toast(`NFT подарен ${friend}! Списано 250 Coin`, true);
+    renderProfile(me.name);
+};
+
+// УЛУЧШЕНИЕ ФОНА NFT
+window.upgradeNftBg = async function() {
+    if (!currentNftId) return;
+    if (profile.balance < UPG_COST) return toast(`Нужно ${UPG_COST} Coin!`);
+
+    const styles = { ...(profile.nftStyles || {}) };
+    const cur = styleOf(currentNftId, styles);
+    const idx = RAR_ORDER.indexOf(cur.rarity || "common");
+    if (idx >= RAR_ORDER.length - 1) return toast("Максимальный уровень!");
+
+    await update(userRef(me.name), { balance: profile.balance - UPG_COST });
+
+    if (Math.random() < UPG_CHANCE[idx]) {
+        const next = RAR_ORDER[idx + 1];
+        styles[currentNftId] = { rarity: next };
+        await update(userRef(me.name), { nftStyles: styles });
+        toast(`Фон улучшен: ${RARITY[next].label}! ✨`, true);
+    } else {
+        toast("Не повезло — попробуйте ещё раз");
+    }
+};
+
+// НАСТРОЙКИ
+window.openSettings = () => {
+    $("setBio").value = profile.bio || "";
+    $("setBg").value = profile.profileBg || "bg-blue";
+    $("setBubbleStyle").value = profile.bubbleStyle || "bub-default";
+    $("setMsgColor").value = profile.msgColor || "#2d7aff";
+    renderDevices(profile.devices || {});
+    show("vSettings");
+};
+
+window.saveSettings = async () => {
+    const updates = {
+        bio: $("setBio").value,
+        profileBg: $("setBg").value,
+        bubbleStyle: $("setBubbleStyle").value,
+        msgColor: $("setMsgColor").value
+    };
+    await update(userRef(me.name), updates);
+    toast("Настройки сохранены!", true);
+    show("vProfile");
+};
+
+window.createClan = async () => {
+    const name = $("setClan").value.trim();
+    if(!name) return toast("Введите название клана");
+    if(profile.nex < 500) return toast("Нужно 500 NEX!");
+    await update(userRef(me.name), { clan: name, nex: profile.nex - 500 });
+    toast("Клан создан!", true);
+    show("vProfile");
+};
+
+// КРАФТ NFT (4 шт. → 1 улучшенный, минимум «Редкий»)
+window.startUpgrade = async function(baseId) {
+    let nfts = toArr(profile.nfts);
+    if (nfts.filter(id => isBaseOf(id, baseId)).length < 4) return toast("Нужно 4 NFT!");
+    openModal("mAnvil");
+    setTimeout(async () => {
+        $("anvilResult").style.opacity = "1";
+        let removed = 0;
+        nfts = nfts.filter(id => { if (isBaseOf(id, baseId) && removed < 4) { removed++; return false; } return true; });
+        const newId = baseId + '_upg_' + Date.now();
+        nfts.push(newId);
+
+        const styles = { ...(profile.nftStyles || {}) };
+        styles[newId] = { rarity: rollRarity(1) };
+
+        await update(userRef(me.name), { nfts, nftStyles: styles });
+        setTimeout(() => { closeModal("mAnvil"); $("anvilResult").style.opacity = "0"; renderProfile(me.name); }, 1000);
+    }, 1500);
+};
+
+window.openNftView = function(nftId) {
+    currentNftId = nftId;
+    const src = viewingProfile ? (invData || {}) : (profile || {});
+    const base = nftBase(nftId);
+    const s = styleOf(nftId, src.nftStyles);
+    const idx = RAR_ORDER.indexOf(s.rarity || "common");
+
+    $("nftViewBox").className = `nft-view-box ${s.bg} ${s.style}`;
+    $("nftViewBox").innerHTML = inst(base.svg);
+    $("nftViewName").textContent = base.name + (nftId.includes('_upg') ? " 👑" : "");
+    $("nftRarity").innerHTML = s.rarity ? `<b style="color:${s.color}">${s.label}</b>` : `<span class="sub">Обычный — улучшите фон!</span>`;
+
+    $("nftActions").style.display = viewingProfile ? "none" : "block";
+    $("nftUpgradeBtn").textContent = idx >= RAR_ORDER.length - 1
+        ? "✨ Максимальный уровень"
+        : `🎨 Улучшить фон (${UPG_COST} 🪙) — шанс ${Math.round(UPG_CHANCE[idx] * 100)}%`;
+    $("nftUpgradeBtn").disabled = idx >= RAR_ORDER.length - 1;
+    $("nftUpgradeBtn").style.opacity = idx >= RAR_ORDER.length - 1 ? "0.5" : "1";
+
+    openModal("mNftView");
+};
+
+window.buyPremium = async function() {
+    if(profile.nex < 5000) return toast("Нужно 5000 NEX!");
+    await update(userRef(me.name), { nex: profile.nex - 5000, premium: true });
+    toast("Premium активирован! 👑", true);
+    renderProfile(me.name);
+};
+
+// МАГАЗИН
+$("catGift").onclick = () => { shopCat = 'gift'; $("catGift").classList.add('on'); $("catNft").classList.remove('on'); renderShop(); };
+$("catNft").onclick = () => { shopCat = 'nft'; $("catNft").classList.add('on'); $("catGift").classList.remove('on'); renderShop(); };
+
+function renderShop() {
+    const grid = $("shopGrid"); grid.innerHTML = "";
+    if (shopCat === 'gift') {
+        GIFTS.forEach(i => {
+            grid.innerHTML += `<div class="item" onclick="buyItem('${i.id}', 'gift')">
+                ${giftArtHtml(i, "art")}<div>${i.name}</div><div class="price">${i.price} 🪙</div>
+            </div>`;
+        });
+
+        grid.innerHTML += `<div class="evBanner" style="grid-column:1/-1;background:linear-gradient(135deg,#8e44ad,#2d7aff)">⭐ Лимитированные</div>`;
+        LIMITED.forEach(i => {
+            const left = stockLeft(i);
+            grid.innerHTML += `<div class="item" onclick="buyItem('${i.id}', 'gift')">
+                ${giftArtHtml(i, "art")}<div>${i.name}</div><div class="price">${i.price} 🪙</div>
+                <div class="stockTag">${left <= 0 ? 'Распродано' : `Осталось ${left} из ${i.limit}`}</div>
+            </div>`;
+        });
+
+        if (activeEventKey) {
+            const ev = EVENTS[activeEventKey];
+            grid.innerHTML += `<div class="evBanner" style="grid-column:1/-1">${ev.icon} Ивент: ${ev.name}</div>`;
+            ev.gifts.forEach(g => {
+                grid.innerHTML += `<div class="item" onclick="buyItem('${g.id}', 'gift')">
+                    ${giftArtHtml(g, "art")}<div>${g.name}</div><div class="price">${g.price} 🪙</div>
+                    <div class="evGiftTag">ивентовый</div>
+                </div>`;
+            });
+        }
+    } else {
+        NFTS.forEach(i => {
+            grid.innerHTML += `<div class="item" onclick="buyItem('${i.id}', 'nft')">
+                <div class="art nftcard nft-bg-gray">${inst(i.svg)}</div><div>${i.name}</div><div class="price">${i.price} 🪙</div>
+            </div>`;
+        });
+    }
+}
+
+window.buyItem = async function(id, type) {
+    if (type === 'gift') {
+        const g = giftById(id);
+        if (!g) return;
+        if (!giftAvailable(g)) return toast("Этот подарок только во время ивента");
+        if (profile.balance < g.price) return toast("Недостаточно средств!");
+
+        // Лимитированный: сначала резервируем штуку в общем счётчике
+        if (g.limit) {
+            const r = await runTransaction(ref(db, "giftStock/" + g.id), cur => {
+                const left = (cur === null || cur === undefined) ? g.limit : cur;
+                if (left <= 0) return undefined;
+                return left - 1;
+            });
+            if (!r.committed) return toast("Распродано!");
+        }
+
+        await update(userRef(me.name), {
+            balance: profile.balance - g.price,
+            gifts: [...toArr(profile.gifts), { id: g.id, name: g.name, emoji: g.emoji, at: Date.now() }]
+        });
+        toast(`Куплено: ${g.name}!`, true);
+        return;
+    }
+
+    const item = NFTS.find(i => i.id === id);
+    if (!item) return;
+    if (profile.balance < item.price) return toast("Недостаточно средств!");
+    const copyId = item.id + "_c" + Date.now().toString(36) + Math.floor(Math.random() * 999);
+    const n = toArr(profile.nfts); n.push(copyId);
+    const styles = { ...(profile.nftStyles || {}), [copyId]: { rarity: rollRarity(0) } };
+    await update(userRef(me.name), { balance: profile.balance - item.price, nfts: n, nftStyles: styles });
+    toast(`Куплено: ${item.name}!`, true);
+};
+
+// АДМИНКА
+window.adminAction = async function(action) {
+    if (me.role !== "ADMIN") return;
+
+    let fieldId = 'adminUser3';
+    if (['balance', 'nex'].includes(action)) fieldId = 'adminUser1';
+    if (['verify', 'unverify', 'premium', 'unpremium', 'makeadmin', 'removeadmin'].includes(action)) fieldId = 'adminUser2';
+
+    const user = normName($(fieldId).value);
+    if (!user) return toast("Введите ник");
+    const snap = await get(userRef(user));
+    if (!snap.exists()) return toast("Пользователь не найден");
+
+    let updates = {};
+    if (action === 'balance' || action === 'nex') {
+        const amount = Number($("adminAmount1").value);
+        if (!amount) return toast("Введите сумму");
+        updates[action] = (snap.val()[action] || 0) + amount;
+    } else if (action === 'ban') updates.banned = true;
+    else if (action === 'unban') updates.banned = false;
+    else if (action === 'freeze') updates.frozen = true;
+    else if (action === 'unfreeze') updates.frozen = false;
+    else if (action === 'verify') updates.verified = true;
+    else if (action === 'unverify') updates.verified = false;
+    else if (action === 'premium') updates.premium = true;
+    else if (action === 'unpremium') updates.premium = false;
+    else if (action === 'makeadmin') updates.role = "ADMIN";
+    else if (action === 'removeadmin') updates.role = "USER";
+    else if (action === 'clearClan') updates.clan = "";
+    else if (action === 'clearNft') { updates.nfts = []; updates.nftStyles = {}; }
+
+    await update(userRef(user), updates);
+    toast("Действие выполнено!", true);
+};
+
+// НАВИГАЦИЯ
+document.querySelectorAll("#bottomNav button[data-go]").forEach(b => {
+  b.onclick = () => {
+    const v = b.dataset.go;
+    document.querySelectorAll("#bottomNav button").forEach(x => x.classList.toggle('on', x === b));
+    if (v === "vChats") show("vChats");
+    if (v === "vShop") show("vShop");
+    if (v === "vProfile") openProfile(me.name);
+    if (v === "vAdmin") show("vAdmin");
+  };
+});
+
+$("themeBtn").onclick = () => {
+  const light = document.documentElement.dataset.theme === "light";
+  document.documentElement.dataset.theme = light ? "dark" : "light";
+  localStorage.setItem("theme", light ? "dark" : "light");
+};
+if (localStorage.getItem("theme") === "light") document.documentElement.dataset.theme = "light";
+
+</script>
+</body>
+</html>
